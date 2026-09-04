@@ -1,12 +1,14 @@
 // ===================================================================
 // GENERADOR CINEMATOGRÁFICO DE VIDEO (Canvas 2D + MediaRecorder)
 // Recorrido fiel a la experiencia web (~56 segundos)
-// Sincronizado en tiempo real para iPhone / iOS Safari y PC
+// Compatible 100% con PC (Chrome, Edge, Firefox) y móvil (iPhone 14 iOS Safari)
 // ===================================================================
 
 import { 
   initAudioContext, 
-  createVideoAudioTrack 
+  getAudioDestination, 
+  startVideoSoundtrack, 
+  stopVideoSoundtrack 
 } from '../audio/retroAudioEngine';
 
 // Carga segura de imagen con CORS
@@ -23,42 +25,30 @@ function loadImage(src) {
   });
 }
 
-// Detección de navegador y dispositivo
-function isSafariOrIOS() {
-  if (typeof navigator === 'undefined') return false;
-  const ua = navigator.userAgent || '';
-  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
-  return isIOS || isSafari;
-}
-
-// Obtener los mejores tipos MIME según el entorno
-function getSupportedMimeTypes() {
-  if (typeof MediaRecorder === 'undefined') return [];
+// Función universal para dibujar rectángulos redondeados segura ante anchos/altos cero o radios no soportados
+function safeRoundRect(ctx, x, y, w, h, r) {
+  if (w <= 0 || h <= 0) return;
+  const radius = Math.max(0, Math.min(r, w / 2, h / 2));
   
-  if (isSafariOrIOS()) {
-    // Safari / iOS: MP4 nativo (evitar 'video/mp4;codecs=avc1' que rechaza pistas de audio WebAudio)
-    const types = [
-      'video/mp4',
-      'video/mp4;codecs=avc1,mp4a.40.2',
-      'video/mp4;codecs=avc1',
-      ''
-    ];
-    return types.filter(t => !t || MediaRecorder.isTypeSupported(t));
-  } else {
-    // Chrome / Firefox / Edge / Android: WebM con VP9/VP8 y Opus (estándar óptimo para audio+video)
-    const types = [
-      'video/webm;codecs=vp9,opus',
-      'video/webm;codecs=vp8,opus',
-      'video/webm',
-      'video/mp4',
-      ''
-    ];
-    return types.filter(t => !t || MediaRecorder.isTypeSupported(t));
+  if (typeof ctx.roundRect === 'function') {
+    try {
+      ctx.roundRect(x, y, w, h, radius);
+      return;
+    } catch (e) {}
   }
+
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+  ctx.lineTo(x + radius, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
 }
 
-// Dibujar imagen manteniendo proporción y encuadrando caras de forma segura (sin subpíxeles impares)
+// Dibujar imagen manteniendo proporción y encuadrando caras de forma segura (con coordenadas estrictamente pares)
 function drawFittedPhoto(ctx, img, dx, dy, size, isPhoto27 = false) {
   if (!img) {
     ctx.fillStyle = '#E2E8F0';
@@ -205,31 +195,64 @@ export async function generateCinematicVideo({
   canvas.height = 1280;
   const ctx = canvas.getContext('2d');
 
-  // Asegurar que el canvas esté en el DOM para que el compositor de iOS Safari nunca pause captureStream
-  canvas.style.position = 'fixed';
-  canvas.style.top = '-9999px';
-  canvas.style.left = '-9999px';
-  canvas.style.width = '1px';
-  canvas.style.height = '1px';
-  canvas.style.opacity = '0';
-  canvas.style.pointerEvents = 'none';
-  canvas.style.zIndex = '-1';
-  document.body.appendChild(canvas);
-
   const fps = 30;
   const totalDurationSeconds = 56; // 56 segundos para las 29 fotos completas, carta y brindis
 
   const stream = canvas.captureStream(fps);
 
-  // Iniciar pista de audio sincronizada con timestamps limpios
-  const audioInfo = createVideoAudioTrack(totalDurationSeconds);
-  if (audioInfo && audioInfo.track) {
+  // Iniciar pista de audio sincronizada
+  const audioDest = getAudioDestination();
+  if (audioDest && audioDest.stream && audioDest.stream.getAudioTracks().length > 0) {
     try {
-      stream.addTrack(audioInfo.track);
+      stream.addTrack(audioDest.stream.getAudioTracks()[0]);
     } catch (e) {
       console.warn('No se pudo añadir pista de audio al stream:', e);
     }
   }
+
+  // Detección de formato óptimo según plataforma
+  let mimeType = '';
+  if (typeof MediaRecorder !== 'undefined') {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '');
+    if (isIOS) {
+      if (MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4';
+      }
+    } else {
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+        mimeType = 'video/webm;codecs=vp9,opus';
+      } else if (MediaRecorder.isTypeSupported('video/webm')) {
+        mimeType = 'video/webm';
+      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+        mimeType = 'video/mp4';
+      }
+    }
+  }
+
+  const chunks = [];
+  let recorder = null;
+
+  try {
+    recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+  } catch (err1) {
+    console.warn('Fallo inicializar MediaRecorder con opciones:', err1);
+    try {
+      recorder = new MediaRecorder(stream);
+      mimeType = '';
+    } catch (err2) {
+      console.warn('Fallo MediaRecorder con stream completo, reintentando solo video:', err2);
+      const videoStream = new MediaStream(canvas.captureStream(fps).getVideoTracks());
+      recorder = new MediaRecorder(videoStream);
+      mimeType = '';
+    }
+  }
+
+  recorder.ondataavailable = (e) => {
+    if (e.data && e.data.size > 0) chunks.push(e.data);
+  };
+
+  // Iniciar banda sonora sincronizada
+  const soundtrack = startVideoSoundtrack(totalDurationSeconds);
 
   // Partículas de confetti para la escena 1
   const confettiColors = ['#E11D48', '#FFB703', '#00A896', '#E4007C', '#FB8500', '#2563EB'];
@@ -252,8 +275,51 @@ export async function generateCinematicVideo({
     isPhoto27: idx === 26 // Foto 27: ajuste de caras
   }));
 
-  // Pintado de fotograma según el tiempo transcurrido (soporta pre-renderizado del fotograma 0)
-  function renderFrame(elapsed) {
+  return new Promise((resolve, reject) => {
+    recorder.onstop = () => {
+      stopVideoSoundtrack();
+      if (soundtrack && soundtrack.cleanup) soundtrack.cleanup();
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '');
+      const finalMime = mimeType || (isIOS ? 'video/mp4' : 'video/webm');
+      const blob = new Blob(chunks, { type: finalMime });
+      const url = URL.createObjectURL(blob);
+      resolve({ blob, url });
+    };
+
+    recorder.onerror = (err) => {
+      console.error('Error durante la grabación:', err);
+      stopVideoSoundtrack();
+      if (soundtrack && soundtrack.cleanup) soundtrack.cleanup();
+      reject(err);
+    };
+
+    try {
+      recorder.start();
+    } catch (startErr) {
+      console.error('Error al ejecutar recorder.start():', startErr);
+      stopVideoSoundtrack();
+      if (soundtrack && soundtrack.cleanup) soundtrack.cleanup();
+      reject(startErr);
+      return;
+    }
+
+    let startTime = null;
+
+    // Bucle de renderizado basado en tiempo real (evita desincronización en pantallas 120Hz/60Hz)
+    function renderLoop(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const elapsed = (timestamp - startTime) / 1000;
+
+      if (elapsed >= totalDurationSeconds) {
+        if (recorder.state === 'recording') {
+          try {
+            recorder.stop();
+          } catch (e) {
+            console.warn('Error al detener recorder:', e);
+          }
+        }
+        return;
+      }
 
       // 1. Fondo degradado base
       const bg = ctx.createLinearGradient(0, 0, 720, 1280);
@@ -278,7 +344,7 @@ export async function generateCinematicVideo({
         ctx.lineWidth = 2.5;
         ctx.setLineDash([8, 6]);
         ctx.beginPath();
-        ctx.roundRect(160, 140, 400, 52, 26);
+        safeRoundRect(ctx, 160, 140, 400, 52, 26);
         ctx.fill();
         ctx.stroke();
         ctx.setLineDash([]);
@@ -318,16 +384,20 @@ export async function generateCinematicVideo({
         ctx.font = 'bold 36px "Patrick Hand", cursive, sans-serif';
         ctx.fillText(statusText, 360, 750);
 
-        // Barra
+        // Barra base
         ctx.fillStyle = '#E2E8F0';
         ctx.beginPath();
-        ctx.roundRect(160, 780, 400, 24, 12);
+        safeRoundRect(ctx, 160, 780, 400, 24, 12);
         ctx.fill();
 
-        ctx.fillStyle = '#E11D48';
-        ctx.beginPath();
-        ctx.roundRect(160, 780, (400 * fillProgress) / 100, 24, 12);
-        ctx.fill();
+        // Barra progreso
+        const barFillW = (400 * fillProgress) / 100;
+        if (barFillW > 0) {
+          ctx.fillStyle = '#E11D48';
+          ctx.beginPath();
+          safeRoundRect(ctx, 160, 780, barFillW, 24, 12);
+          ctx.fill();
+        }
 
         ctx.fillStyle = '#9F1239';
         ctx.font = 'bold 22px sans-serif';
@@ -387,13 +457,13 @@ export async function generateCinematicVideo({
         // Sombra suave realista
         ctx.fillStyle = 'rgba(0, 0, 0, 0.10)';
         ctx.beginPath();
-        ctx.roundRect(pCardX + 10, pCardY + 14, pCardW, pCardH, 12);
+        safeRoundRect(ctx, pCardX + 10, pCardY + 14, pCardW, pCardH, 12);
         ctx.fill();
 
         // Cartulina polaroid blanca limpia
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.roundRect(pCardX, pCardY, pCardW, pCardH, 12);
+        safeRoundRect(ctx, pCardX, pCardY, pCardW, pCardH, 12);
         ctx.fill();
 
         // Ventana cuadrada de foto
@@ -468,14 +538,14 @@ export async function generateCinematicVideo({
 
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
         ctx.beginPath();
-        ctx.roundRect(cardX + 8, cardY + 12, cardW, cardH, 20);
+        safeRoundRect(ctx, cardX + 8, cardY + 12, cardW, cardH, 20);
         ctx.fill();
 
         ctx.fillStyle = letterBg;
         ctx.strokeStyle = '#EADBC0';
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.roundRect(cardX, cardY, cardW, cardH, 20);
+        safeRoundRect(ctx, cardX, cardY, cardW, cardH, 20);
         ctx.fill();
         ctx.stroke();
 
@@ -484,7 +554,7 @@ export async function generateCinematicVideo({
         ctx.font = 'bold 90px Georgia, serif';
         ctx.fillText('“', cardX + 45, cardY + 85);
 
-        // Estrofas del Poema (Texto definitivo exacto)
+        // Estrofas del Poema
         let ty = cardY + 80;
 
         // Estrofa 1
@@ -612,19 +682,19 @@ export async function generateCinematicVideo({
         // Marco elegante
         ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
         ctx.beginPath();
-        ctx.roundRect(cPhotoX + 8, cPhotoY + 12, cPhotoSize, cPhotoSize, 24);
+        safeRoundRect(ctx, cPhotoX + 8, cPhotoY + 12, cPhotoSize, cPhotoSize, 24);
         ctx.fill();
 
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.roundRect(cPhotoX, cPhotoY, cPhotoSize, cPhotoSize, 24);
+        safeRoundRect(ctx, cPhotoX, cPhotoY, cPhotoSize, cPhotoSize, 24);
         ctx.fill();
 
         // Foto centrada
         if (specialCoupleImg) {
           ctx.save();
           ctx.beginPath();
-          ctx.roundRect(cPhotoX + 16, cPhotoY + 16, cPhotoSize - 32, cPhotoSize - 32, 16);
+          safeRoundRect(ctx, cPhotoX + 16, cPhotoY + 16, cPhotoSize - 32, cPhotoSize - 32, 16);
           ctx.clip();
           drawFittedPhoto(ctx, specialCoupleImg, cPhotoX + 16, cPhotoY + 16, cPhotoSize - 32);
           ctx.restore();
@@ -680,122 +750,6 @@ export async function generateCinematicVideo({
         ctx.fillText('Para mi persona favorita en el universo', 360, 880);
         ctx.restore();
       }
-  } // Fin renderFrame
-
-  return new Promise((resolve, reject) => {
-    const cleanup = () => {
-      if (audioInfo && audioInfo.cleanup) audioInfo.cleanup();
-      if (canvas.parentNode) {
-        canvas.parentNode.removeChild(canvas);
-      }
-    };
-
-    // Inicialización resiliente de MediaRecorder compatible con Chrome y Safari iOS
-    let recorder = null;
-    let chosenMimeType = '';
-    const candidateTypes = getSupportedMimeTypes();
-
-    for (const mime of candidateTypes) {
-      try {
-        const options = mime ? { mimeType: mime } : {};
-        recorder = new MediaRecorder(stream, options);
-        chosenMimeType = mime;
-        break;
-      } catch (err) {
-        console.warn(`MediaRecorder no pudo inicializarse con mime '${mime}':`, err);
-      }
-    }
-
-    // Fallback: Si el navegador rechaza la combinación de audio + video en MediaRecorder
-    if (!recorder && audioInfo && audioInfo.track) {
-      console.warn('Reintentando MediaRecorder solo con video...');
-      const videoOnlyStream = new MediaStream(stream.getVideoTracks());
-      for (const mime of candidateTypes) {
-        try {
-          const options = mime ? { mimeType: mime } : {};
-          recorder = new MediaRecorder(videoOnlyStream, options);
-          chosenMimeType = mime;
-          break;
-        } catch (err) {
-          console.warn(`Fallo también solo con video y mime '${mime}':`, err);
-        }
-      }
-    }
-
-    // Fallback nativo final sin opciones
-    if (!recorder) {
-      try {
-        recorder = new MediaRecorder(stream);
-      } catch (err) {
-        const videoOnlyStream = new MediaStream(stream.getVideoTracks());
-        recorder = new MediaRecorder(videoOnlyStream);
-      }
-    }
-
-    if (!recorder) {
-      cleanup();
-      reject(new Error('MediaRecorder no está disponible en este navegador.'));
-      return;
-    }
-
-    const chunks = [];
-    recorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) chunks.push(e.data);
-    };
-
-    recorder.onstop = () => {
-      cleanup();
-      const outputType = chosenMimeType || (isSafariOrIOS() ? 'video/mp4' : 'video/webm');
-      const blob = new Blob(chunks, { type: outputType });
-      const url = URL.createObjectURL(blob);
-      resolve({ blob, url });
-    };
-
-    recorder.onerror = (err) => {
-      console.error('Error durante la grabación:', err);
-      cleanup();
-      reject(err);
-    };
-
-    // Pintar fotograma 0 inmediatamente antes de arrancar el grabador
-    renderFrame(0);
-
-    // Arrancar el grabador: en Safari / iOS sin timeslice para no corromper el contenedor MP4
-    try {
-      if (isSafariOrIOS()) {
-        recorder.start();
-      } else {
-        recorder.start(1000);
-      }
-    } catch (startErr) {
-      console.warn('Fallo start con timeslice, reintentando start simple:', startErr);
-      try {
-        recorder.start();
-      } catch (fatalErr) {
-        cleanup();
-        reject(fatalErr);
-        return;
-      }
-    }
-
-    let startTime = null;
-
-    function renderLoop(timestamp) {
-      if (!startTime) startTime = timestamp;
-      const elapsed = (timestamp - startTime) / 1000;
-
-      if (elapsed >= totalDurationSeconds) {
-        if (recorder.state === 'recording') {
-          try {
-            recorder.stop();
-          } catch (e) {
-            console.warn('Error deteniendo grabador:', e);
-          }
-        }
-        return;
-      }
-
-      renderFrame(elapsed);
 
       const currentPct = Math.min(98, Math.round((elapsed / totalDurationSeconds) * 88) + 12);
       onProgress(currentPct);
