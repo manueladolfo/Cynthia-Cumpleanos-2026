@@ -493,7 +493,7 @@ export async function generateCinematicVideo({
         ctx.font = '25px "Caveat", cursive, Georgia, serif';
         ctx.fillText('Hay personas que cuando llegan a tu vida, lo cambian todo.', 360, ty);
         ty += 32;
-        ctx.fillText('Creo que ni el destino, escribiendo de las mejores historias,', 360, ty);
+        ctx.fillText('Creo que ni el destino escribiendo las mejores historias,', 360, ty);
         ty += 32;
         ctx.fillText('habría creado a alguien tan especial para mí como tú.', 360, ty);
 
@@ -511,7 +511,7 @@ export async function generateCinematicVideo({
         ty += 32;
         ctx.fillText('y hacerte saber que siempre estoy y estaré para ti,', 360, ty);
         ty += 32;
-        ctx.fillText('tanto para los unos como para los otros', 360, ty);
+        ctx.fillText('tanto para los unos como para los otros...', 360, ty);
         ty += 30;
         ctx.fillStyle = '#9F1239';
         ctx.font = 'italic 23px "Caveat", cursive, Georgia, serif';
@@ -527,9 +527,9 @@ export async function generateCinematicVideo({
         ty += 32;
         ctx.fillStyle = '#1E293B';
         ctx.font = '25px "Caveat", cursive, Georgia, serif';
-        ctx.fillText('Celebrarte tu forma de ser, tu sonrisa', 360, ty);
+        ctx.fillText('Me gustaría celebrar contigo, tu forma de ser,', 360, ty);
         ty += 32;
-        ctx.fillText('y tu forma de hacerme sentir bien.', 360, ty);
+        ctx.fillText('tu sonrisa y tu luz.', 360, ty);
         ty += 32;
         ctx.fillText('Que la vida te siga mostrando que no hay nada más especial', 360, ty);
         ty += 32;
