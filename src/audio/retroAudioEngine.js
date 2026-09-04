@@ -267,24 +267,30 @@ export function isAudioPlaying() {
   return isPlaying;
 }
 
-let wasMusicPlayingBeforeVideo = false;
-
-export function startVideoSoundtrack(totalDurationSeconds = 48) {
+export function createVideoAudioTrack(totalDurationSeconds = 56) {
   initAudioContext();
-  if (!audioCtx) return;
+  if (!audioCtx) return null;
 
   wasMusicPlayingBeforeVideo = isPlaying;
   if (isPlaying) {
     stopBirthdayMelody();
   }
 
+  // Destino nuevo e independiente para la grabación (evita desfase de timestamps en iOS)
+  let recDest = null;
+  try {
+    recDest = audioCtx.createMediaStreamDestination();
+  } catch (e) {
+    console.warn('createMediaStreamDestination no soportado:', e);
+  }
+
   const videoMasterGain = audioCtx.createGain();
   videoMasterGain.gain.setValueAtTime(0.40, audioCtx.currentTime);
 
-  if (audioDestination) {
-    videoMasterGain.connect(audioDestination);
+  if (recDest) {
+    videoMasterGain.connect(recDest);
   }
-  // Permitir escucharla mientras se graba para una experiencia inmersiva
+  // Permitir escuchar mientras se graba
   videoMasterGain.connect(audioCtx.destination);
 
   let scheduleTime = audioCtx.currentTime + 0.05;
@@ -298,6 +304,24 @@ export function startVideoSoundtrack(totalDurationSeconds = 48) {
       scheduleTime += item.dur + item.pause;
     });
   }
+
+  return {
+    track: recDest && recDest.stream.getAudioTracks().length > 0 ? recDest.stream.getAudioTracks()[0] : null,
+    cleanup: () => {
+      try {
+        videoMasterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        videoMasterGain.disconnect();
+      } catch (e) {}
+      if (wasMusicPlayingBeforeVideo) {
+        startBirthdayMelody();
+      }
+    }
+  };
+}
+
+export function startVideoSoundtrack(totalDurationSeconds = 56) {
+  const result = createVideoAudioTrack(totalDurationSeconds);
+  return result;
 }
 
 export function stopVideoSoundtrack() {
