@@ -40,7 +40,7 @@ export default function PolaroidCarousel({ onOpenLightbox }) {
 
   const handlePhotoClick = () => {
     if (onOpenLightbox) {
-      onOpenLightbox(CAROUSEL_PHOTOS[currentIndex], 'Recuerdo especial');
+      onOpenLightbox(CAROUSEL_PHOTOS[currentIndex]);
     }
   };
 
