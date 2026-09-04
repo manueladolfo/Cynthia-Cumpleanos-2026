@@ -94,6 +94,41 @@ export default function App() {
     }, 400);
   };
 
+  // Ráfaga suave periódica de confeti cada 30 segundos (efecto festivo no invasivo)
+  useEffect(() => {
+    if (step !== 2) return;
+
+    const interval = setInterval(() => {
+      // Pausa inteligente: no lanzar si hay un modal abierto, se está exportando video o la pestaña está oculta
+      if (document.hidden || videoModalOpen || lightboxData || isExporting) return;
+
+      confetti({
+        particleCount: 18,
+        angle: 60,
+        spread: 45,
+        startVelocity: 26,
+        origin: { x: 0.05, y: 0.35 },
+        colors: ['#E11D48', '#FFB703', '#00A896', '#E4007C', '#FB8500'],
+        ticks: 200,
+        gravity: 0.7,
+        scalar: 0.85
+      });
+      confetti({
+        particleCount: 18,
+        angle: 120,
+        spread: 45,
+        startVelocity: 26,
+        origin: { x: 0.95, y: 0.35 },
+        colors: ['#E11D48', '#FFB703', '#00A896', '#E4007C', '#FB8500'],
+        ticks: 200,
+        gravity: 0.7,
+        scalar: 0.85
+      });
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [step, videoModalOpen, lightboxData, isExporting]);
+
   // Generador de video cinemático MP4/WebM
   const handleSaveMoment = async () => {
     if (isExporting) return;
