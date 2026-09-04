@@ -235,7 +235,7 @@ export default function ChampagneToastSection({
       {/* Fotografía de la pareja con bordes redondeados y sombra idéntica a la imagen */}
       <div className="w-full max-w-[320px] sm:max-w-[350px] aspect-square rounded-xl overflow-hidden shadow-[0_12px_28px_rgba(0,0,0,0.12)] border border-stone-200/80 my-4 bg-stone-100">
         <img 
-          src="images/special_couple.jpg" 
+          src="/images/special_couple.jpg" 
           alt="Nosotros celebrando juntos" 
           className="w-full h-full object-cover block select-none pointer-events-none" 
           loading="lazy" 
