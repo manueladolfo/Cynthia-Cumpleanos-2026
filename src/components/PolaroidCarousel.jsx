@@ -113,57 +113,51 @@ export default function PolaroidCarousel({ onOpenLightbox }) {
           ))}
         </div>
 
-        {/* Motivo Festivo Inferior: Rayos Estrellados + Guirnalda de Banderitas de Colores */}
-        <div className="w-full flex justify-center items-center py-1">
-          <svg 
-            viewBox="0 0 240 36" 
-            className="w-full max-w-[210px] h-8 overflow-visible" 
-            fill="none" 
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            {/* Estrella de rayos izquierda (8 líneas) */}
-            <g stroke="#78716C" strokeWidth="1.2" strokeLinecap="round">
-              <line x1="20" y1="18" x2="48" y2="18" />
-              <line x1="34" y1="4" x2="34" y2="32" />
-              <line x1="24" y1="8" x2="44" y2="28" />
-              <line x1="24" y1="28" x2="44" y2="8" />
-            </g>
+        {/* Motivo Festivo Inferior: Corazón Rosa Central con Guirnaldas de Colores a Ambos Lados */}
+        <div className="w-full flex justify-center items-center py-1 select-none" aria-hidden="true">
+          <svg className="w-full max-w-[240px] h-8 overflow-visible" viewBox="0 0 240 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Guirnalda Izquierda */}
+            <path d="M 12 12 Q 58 24 102 12" stroke="#CBD5E1" strokeWidth="1.5" strokeDasharray="3 2" strokeLinecap="round" />
+            {/* Banderitas / pétalos de colores en la guirnalda izquierda */}
+            <polygon points="28,15 38,17 33,26" fill="#FFB703" />
+            <polygon points="48,18 58,19 53,28" fill="#00A896" />
+            <polygon points="68,18 78,17 73,27" fill="#FB8500" />
+            <polygon points="86,16 96,14 91,24" fill="#2D6A4F" />
 
-            {/* Guirnalda curvada con banderitas triangulares de colores */}
-            <g>
-              {/* Hilo de la guirnalda */}
+            {/* Bolitas decorativas de colores */}
+            <circle cx="20" cy="13" r="3.5" fill="#E4007C" />
+            <circle cx="43" cy="18" r="3" fill="#FB7185" />
+            <circle cx="63" cy="19" r="3" fill="#FFB703" />
+            <circle cx="82" cy="17" r="3" fill="#00A896" />
+            <circle cx="100" cy="13" r="3.5" fill="#E4007C" />
+
+            {/* Corazón Rosa Central Destacado */}
+            <g transform="translate(120, 16) scale(0.9)">
+              {/* Aura suave */}
+              <circle cx="0" cy="0" r="16" fill="#FFF1F2" stroke="#FDA4AF" strokeWidth="1.5" />
+              {/* Corazón Rosa */}
               <path 
-                d="M 68 11 Q 120 22, 172 11" 
-                stroke="#78716C" 
-                strokeWidth="1.2" 
-                strokeLinecap="round" 
-                fill="none" 
+                d="M 0 -6 C -3 -13, -13 -10, -12 0 C -11 6, -1 11, 0 14 C 1 11, 11 6, 12 0 C 13 -10, 3 -13, 0 -6 Z" 
+                fill="#E4007C" 
               />
-
-              {/* 7 Banderitas triangulares colgantes */}
-              {/* Banderita 1 - Rojo */}
-              <polygon points="76,12 83,21 90,14" fill="#DC2626" />
-              {/* Banderita 2 - Azul Marino */}
-              <polygon points="91,14 98,24 105,16" fill="#1D4ED8" />
-              {/* Banderita 3 - Amarillo */}
-              <polygon points="106,16 113,26 120,18" fill="#F59E0B" />
-              {/* Banderita 4 - Verde */}
-              <polygon points="121,18 128,26 135,17" fill="#16A34A" />
-              {/* Banderita 5 - Rojo/Granate */}
-              <polygon points="136,17 143,24 150,15" fill="#B91C1C" />
-              {/* Banderita 6 - Azul Cielo */}
-              <polygon points="151,15 158,22 165,12" fill="#0284C7" />
-              {/* Banderita 7 - Verde Lima */}
-              <polygon points="163,12 168,19 173,10" fill="#65A30D" />
+              {/* Brillo blanco sutil */}
+              <circle cx="-4" cy="-4" r="1.5" fill="#FFFFFF" opacity="0.8" />
             </g>
 
-            {/* Estrella de rayos derecha (8 líneas) */}
-            <g stroke="#78716C" strokeWidth="1.2" strokeLinecap="round">
-              <line x1="192" y1="18" x2="220" y2="18" />
-              <line x1="206" y1="4" x2="206" y2="32" />
-              <line x1="196" y1="8" x2="216" y2="28" />
-              <line x1="196" y1="28" x2="216" y2="8" />
-            </g>
+            {/* Guirnalda Derecha */}
+            <path d="M 138 12 Q 182 24 228 12" stroke="#CBD5E1" strokeWidth="1.5" strokeDasharray="3 2" strokeLinecap="round" />
+            {/* Banderitas / pétalos de colores en la guirnalda derecha */}
+            <polygon points="144,14 154,16 149,24" fill="#2D6A4F" />
+            <polygon points="162,17 172,18 167,27" fill="#FB8500" />
+            <polygon points="182,19 192,18 187,28" fill="#00A896" />
+            <polygon points="202,17 212,15 207,26" fill="#FFB703" />
+
+            {/* Bolitas decorativas de colores */}
+            <circle cx="140" cy="13" r="3.5" fill="#E4007C" />
+            <circle cx="158" cy="17" r="3" fill="#00A896" />
+            <circle cx="177" cy="19" r="3" fill="#FFB703" />
+            <circle cx="197" cy="18" r="3" fill="#FB7185" />
+            <circle cx="220" cy="13" r="3.5" fill="#E4007C" />
           </svg>
         </div>
       </article>
