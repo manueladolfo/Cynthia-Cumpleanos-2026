@@ -290,6 +290,11 @@ export function createVideoAudioTrack(totalDurationSeconds = 56) {
   if (recDest) {
     videoMasterGain.connect(recDest);
   }
+  if (audioDestination) {
+    try {
+      videoMasterGain.connect(audioDestination);
+    } catch (e) {}
+  }
   // Permitir escuchar mientras se graba
   videoMasterGain.connect(audioCtx.destination);
 
