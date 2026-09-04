@@ -269,55 +269,122 @@ export function isAudioPlaying() {
 }
 
 export function createVideoAudioTrack(totalDurationSeconds = 56) {
-  initAudioContext();
-  if (!audioCtx) return null;
-
   wasMusicPlayingBeforeVideo = isPlaying;
   if (isPlaying) {
     stopBirthdayMelody();
   }
 
-  // Destino nuevo e independiente para la grabación (evita desfase de timestamps en iOS)
+  // AudioContext dedicado y limpio exclusivo para la grabación de video.
+  // CRÍTICO PARA iOS SAFARI: Al iniciar en currentTime = 0, los timestamps de audio
+  // quedan perfectamente alineados con canvas.captureStream() desde el milisegundo cero,
+  // evitando que el codificador de hardware (AVAssetWriter) descarte frames y congele el video a los 15s.
+  let recCtx = null;
   let recDest = null;
-  try {
-    recDest = audioCtx.createMediaStreamDestination();
-  } catch (e) {
-    console.warn('createMediaStreamDestination no soportado:', e);
-  }
+  const AudioContextClass = typeof window !== 'undefined' ? (window.AudioContext || window.webkitAudioContext) : null;
 
-  const videoMasterGain = audioCtx.createGain();
-  videoMasterGain.gain.setValueAtTime(0.40, audioCtx.currentTime);
-
-  if (recDest) {
-    videoMasterGain.connect(recDest);
-  }
-  if (audioDestination) {
+  if (AudioContextClass) {
     try {
-      videoMasterGain.connect(audioDestination);
-    } catch (e) {}
+      recCtx = new AudioContextClass();
+      if (recCtx.state === 'suspended') {
+        recCtx.resume();
+      }
+      if (typeof recCtx.createMediaStreamDestination === 'function') {
+        recDest = recCtx.createMediaStreamDestination();
+      }
+    } catch (e) {
+      console.warn('No se pudo inicializar AudioContext dedicado para video:', e);
+    }
   }
-  // Permitir escuchar mientras se graba
-  videoMasterGain.connect(audioCtx.destination);
 
-  let scheduleTime = audioCtx.currentTime + 0.05;
+  // Fallback si no se pudo crear el contexto dedicado
+  const activeCtx = recCtx || audioCtx;
+  const activeDest = recDest || (activeCtx && typeof activeCtx.createMediaStreamDestination === 'function' ? activeCtx.createMediaStreamDestination() : null);
+
+  if (!activeCtx) {
+    return { track: null, cleanup: () => {} };
+  }
+
+  const videoMasterGain = activeCtx.createGain();
+  videoMasterGain.gain.setValueAtTime(0.40, activeCtx.currentTime);
+
+  if (activeDest) {
+    videoMasterGain.connect(activeDest);
+  }
+  // Permitir escuchar mientras se graba el video
+  try {
+    videoMasterGain.connect(activeCtx.destination);
+  } catch (e) {}
+
+  let scheduleTime = activeCtx.currentTime + 0.05;
   const endTime = scheduleTime + totalDurationSeconds + 2;
 
   while (scheduleTime < endTime) {
     BIRTHDAY_SONG_8BIT.forEach(item => {
       const freq = NOTES[item.note];
-      play8BitNote(freq, scheduleTime, item.dur, videoMasterGain);
-      play8BitBass(freq, scheduleTime, item.dur, videoMasterGain);
+      if (freq) {
+        // Melodía cuadrada 8-bit
+        try {
+          const osc1 = activeCtx.createOscillator();
+          const osc2 = activeCtx.createOscillator();
+          const noteGain = activeCtx.createGain();
+
+          osc1.type = 'square';
+          osc1.frequency.setValueAtTime(freq, scheduleTime);
+          osc2.type = 'square';
+          osc2.frequency.setValueAtTime(freq, scheduleTime);
+          osc2.detune.setValueAtTime(5, scheduleTime);
+
+          noteGain.gain.setValueAtTime(0.16, scheduleTime);
+          noteGain.gain.setValueAtTime(0.12, scheduleTime + item.dur * 0.7);
+          noteGain.gain.exponentialRampToValueAtTime(0.0001, scheduleTime + item.dur);
+
+          osc1.connect(noteGain);
+          osc2.connect(noteGain);
+          noteGain.connect(videoMasterGain);
+
+          osc1.start(scheduleTime);
+          osc2.start(scheduleTime);
+          osc1.stop(scheduleTime + item.dur);
+          osc2.stop(scheduleTime + item.dur);
+        } catch (e) {}
+
+        // Bajo retro
+        try {
+          const oscBass = activeCtx.createOscillator();
+          const bassGain = activeCtx.createGain();
+
+          oscBass.type = 'triangle';
+          oscBass.frequency.setValueAtTime(freq * 0.5, scheduleTime);
+          bassGain.gain.setValueAtTime(0.18, scheduleTime);
+          bassGain.gain.exponentialRampToValueAtTime(0.0001, scheduleTime + item.dur);
+
+          oscBass.connect(bassGain);
+          bassGain.connect(videoMasterGain);
+
+          oscBass.start(scheduleTime);
+          oscBass.stop(scheduleTime + item.dur);
+        } catch (e) {}
+      }
       scheduleTime += item.dur + item.pause;
     });
   }
 
+  const audioTrack = activeDest && activeDest.stream && activeDest.stream.getAudioTracks().length > 0 
+    ? activeDest.stream.getAudioTracks()[0] 
+    : null;
+
   return {
-    track: recDest && recDest.stream.getAudioTracks().length > 0 ? recDest.stream.getAudioTracks()[0] : null,
+    track: audioTrack,
     cleanup: () => {
       try {
-        videoMasterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        videoMasterGain.gain.setValueAtTime(0, activeCtx.currentTime);
         videoMasterGain.disconnect();
       } catch (e) {}
+      if (recCtx) {
+        try {
+          recCtx.close();
+        } catch (e) {}
+      }
       if (wasMusicPlayingBeforeVideo) {
         startBirthdayMelody();
       }
