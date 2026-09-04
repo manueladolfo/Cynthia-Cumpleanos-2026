@@ -11,12 +11,21 @@ import {
   stopVideoSoundtrack 
 } from '../audio/retroAudioEngine';
 
-// Carga segura de imagen con CORS
+// Carga segura de imagen con CORS y decodificación completa en memoria (evita fallos de GPU en iOS Safari)
 function loadImage(src) {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
+    img.onload = async () => {
+      try {
+        if (typeof img.decode === 'function') {
+          await img.decode();
+        }
+      } catch (e) {
+        console.warn('img.decode failed for:', src, e);
+      }
+      resolve(img);
+    };
     img.onerror = () => {
       console.warn('No se pudo cargar la imagen para el video:', src);
       resolve(null);
@@ -50,14 +59,20 @@ function safeRoundRect(ctx, x, y, w, h, r) {
 
 // Dibujar imagen manteniendo proporción y encuadrando caras de forma segura (con coordenadas estrictamente pares)
 function drawFittedPhoto(ctx, img, dx, dy, size, isPhoto27 = false) {
-  if (!img) {
+  if (!img || !img.complete) {
     ctx.fillStyle = '#E2E8F0';
     ctx.fillRect(Math.floor(dx), Math.floor(dy), Math.floor(size), Math.floor(size));
     return;
   }
 
-  const iw = img.width;
-  const ih = img.height;
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih || iw <= 0 || ih <= 0) {
+    ctx.fillStyle = '#E2E8F0';
+    ctx.fillRect(Math.floor(dx), Math.floor(dy), Math.floor(size), Math.floor(size));
+    return;
+  }
+
   let sx = 0, sy = 0, sw = iw, sh = ih;
 
   if (iw > ih) {
@@ -82,17 +97,23 @@ function drawFittedPhoto(ctx, img, dx, dy, size, isPhoto27 = false) {
   sw = Math.max(2, Math.floor(sw / 2) * 2);
   sh = Math.max(2, Math.floor(sh / 2) * 2);
 
-  ctx.drawImage(
-    img, 
-    sx, 
-    sy, 
-    sw, 
-    sh, 
-    Math.floor(dx), 
-    Math.floor(dy), 
-    Math.floor(size), 
-    Math.floor(size)
-  );
+  try {
+    ctx.drawImage(
+      img, 
+      sx, 
+      sy, 
+      sw, 
+      sh, 
+      Math.floor(dx), 
+      Math.floor(dy), 
+      Math.floor(size), 
+      Math.floor(size)
+    );
+  } catch (drawErr) {
+    console.warn('Error dibujando imagen:', drawErr);
+    ctx.fillStyle = '#E2E8F0';
+    ctx.fillRect(Math.floor(dx), Math.floor(dy), Math.floor(size), Math.floor(size));
+  }
 }
 
 // Dibujar corazón estilizado
@@ -170,6 +191,94 @@ function drawChampagneGlass(ctx, x, y, tiltAngle, liquidColor) {
   ctx.restore();
 }
 
+// Dibujar motivo festivo unificado para el pie de la Polaroid (idéntico a la web)
+function drawPolaroidFestiveGarland(ctx, cx, cy) {
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // Guirnalda Izquierda (línea punteada festiva)
+  ctx.strokeStyle = '#CBD5E1';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.moveTo(-110, -4);
+  ctx.quadraticCurveTo(-60, 10, -20, -4);
+  ctx.stroke();
+
+  // Guirnalda Derecha
+  ctx.beginPath();
+  ctx.moveTo(20, -4);
+  ctx.quadraticCurveTo(60, 10, 110, -4);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Banderitas de colores en guirnalda izquierda
+  const flagsLeft = [
+    { x: -90, y: -1, color: '#FFB703' },
+    { x: -70, y: 3, color: '#00A896' },
+    { x: -50, y: 3, color: '#FB8500' },
+    { x: -32, y: 0, color: '#2D6A4F' }
+  ];
+  flagsLeft.forEach(f => {
+    ctx.fillStyle = f.color;
+    ctx.beginPath();
+    ctx.moveTo(f.x - 5, f.y);
+    ctx.lineTo(f.x + 5, f.y);
+    ctx.lineTo(f.x, f.y + 9);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // Banderitas en guirnalda derecha
+  const flagsRight = [
+    { x: 32, y: 0, color: '#2D6A4F' },
+    { x: 50, y: 3, color: '#FB8500' },
+    { x: 70, y: 3, color: '#00A896' },
+    { x: 90, y: -1, color: '#FFB703' }
+  ];
+  flagsRight.forEach(f => {
+    ctx.fillStyle = f.color;
+    ctx.beginPath();
+    ctx.moveTo(f.x - 5, f.y);
+    ctx.lineTo(f.x + 5, f.y);
+    ctx.lineTo(f.x, f.y + 9);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // Bolitas decorativas de colores
+  const dots = [
+    { x: -100, y: -3, color: '#E4007C' },
+    { x: -80, y: 2, color: '#FB7185' },
+    { x: -60, y: 4, color: '#FFB703' },
+    { x: -40, y: 2, color: '#00A896' },
+    { x: 40, y: 2, color: '#00A896' },
+    { x: 60, y: 4, color: '#FFB703' },
+    { x: 80, y: 2, color: '#FB7185' },
+    { x: 100, y: -3, color: '#E4007C' }
+  ];
+  dots.forEach(d => {
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = d.color;
+    ctx.fill();
+  });
+
+  // Aura suave circular rosa detrás del corazón central
+  ctx.beginPath();
+  ctx.arc(0, 0, 18, 0, Math.PI * 2);
+  ctx.fillStyle = '#FFF1F2';
+  ctx.fill();
+  ctx.strokeStyle = '#FDA4AF';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Corazón Rosa Central Destacado
+  drawHeart(ctx, 0, -10, 18, '#F43F5E');
+
+  ctx.restore();
+}
+
 export async function generateCinematicVideo({
   carouselPhotos,
   onProgress,
@@ -180,7 +289,7 @@ export async function generateCinematicVideo({
 
   initAudioContext();
 
-  // 1. Cargar TODAS las 29 fotos y la foto de pareja
+  // 1. Cargar TODAS las 29 fotos y la foto de pareja con pre-decodificación
   const [loadedCarousel, specialCoupleImg] = await Promise.all([
     Promise.all(carouselPhotos.map(src => loadImage(src))),
     loadImage('/images/special_couple.jpg')
@@ -193,18 +302,42 @@ export async function generateCinematicVideo({
   const canvas = document.createElement('canvas');
   canvas.width = 720;
   canvas.height = 1280;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
+
+  // CRÍTICO PARA iOS SAFARI: Añadir el canvas temporalmente al DOM en capa oculta.
+  // WebKit suspende o congela requestAnimationFrame en elementos desconectados del DOM tras 10-15s.
+  canvas.style.position = 'fixed';
+  canvas.style.top = '0';
+  canvas.style.left = '0';
+  canvas.style.width = '2px';
+  canvas.style.height = '2px';
+  canvas.style.opacity = '0.01';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.zIndex = '-9999';
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.appendChild(canvas);
+  }
+
+  const cleanupCanvas = () => {
+    try {
+      if (canvas && canvas.parentNode) {
+        canvas.parentNode.removeChild(canvas);
+      }
+    } catch (e) {}
+  };
 
   const fps = 30;
   const totalDurationSeconds = 56; // 56 segundos para las 29 fotos completas, carta y brindis
 
+  // Iniciar banda sonora con AudioContext dedicado t=0 para evitar desincronización en AVAssetWriter de iOS
+  const soundtrack = startVideoSoundtrack(totalDurationSeconds);
+
   const stream = canvas.captureStream(fps);
 
-  // Iniciar pista de audio sincronizada
-  const audioDest = getAudioDestination();
-  if (audioDest && audioDest.stream && audioDest.stream.getAudioTracks().length > 0) {
+  // Añadir la pista de audio del soundtrack sincronizado antes de instanciar MediaRecorder
+  if (soundtrack && soundtrack.track) {
     try {
-      stream.addTrack(audioDest.stream.getAudioTracks()[0]);
+      stream.addTrack(soundtrack.track);
     } catch (e) {
       console.warn('No se pudo añadir pista de audio al stream:', e);
     }
@@ -215,7 +348,9 @@ export async function generateCinematicVideo({
   if (typeof MediaRecorder !== 'undefined') {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '');
     if (isIOS) {
-      if (MediaRecorder.isTypeSupported('video/mp4')) {
+      if (MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')) {
+        mimeType = 'video/mp4;codecs=avc1';
+      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
         mimeType = 'video/mp4';
       }
     } else {
@@ -232,27 +367,35 @@ export async function generateCinematicVideo({
   const chunks = [];
   let recorder = null;
 
+  const recorderOptions = {};
+  if (mimeType) {
+    recorderOptions.mimeType = mimeType;
+  }
+  // 2.5 Mbps para 720p: excelente calidad visual y bajo consumo de memoria en iOS Safari
+  recorderOptions.videoBitsPerSecond = 2500000;
+
   try {
-    recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+    recorder = new MediaRecorder(stream, recorderOptions);
   } catch (err1) {
-    console.warn('Fallo inicializar MediaRecorder con opciones:', err1);
+    console.warn('Fallo inicializar MediaRecorder con opciones completas:', err1);
     try {
-      recorder = new MediaRecorder(stream);
-      mimeType = '';
+      recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
     } catch (err2) {
-      console.warn('Fallo MediaRecorder con stream completo, reintentando solo video:', err2);
-      const videoStream = new MediaStream(canvas.captureStream(fps).getVideoTracks());
-      recorder = new MediaRecorder(videoStream);
-      mimeType = '';
+      try {
+        recorder = new MediaRecorder(stream);
+        mimeType = '';
+      } catch (err3) {
+        console.warn('Fallo MediaRecorder con stream completo, reintentando solo video:', err3);
+        const videoStream = new MediaStream(canvas.captureStream(fps).getVideoTracks());
+        recorder = new MediaRecorder(videoStream);
+        mimeType = '';
+      }
     }
   }
 
   recorder.ondataavailable = (e) => {
     if (e.data && e.data.size > 0) chunks.push(e.data);
   };
-
-  // Iniciar banda sonora sincronizada
-  const soundtrack = startVideoSoundtrack(totalDurationSeconds);
 
   // Partículas de confetti para la escena 1
   const confettiColors = ['#E11D48', '#FFB703', '#00A896', '#E4007C', '#FB8500', '#2563EB'];
@@ -276,9 +419,24 @@ export async function generateCinematicVideo({
   }));
 
   return new Promise((resolve, reject) => {
-    recorder.onstop = () => {
+    let isCompleted = false;
+    let watchdogTimer = null;
+    let rafId = null;
+
+    const fullCleanup = () => {
+      isCompleted = true;
+      clearTimeout(watchdogTimer);
+      if (rafId) cancelAnimationFrame(rafId);
+      cleanupCanvas();
       stopVideoSoundtrack();
       if (soundtrack && soundtrack.cleanup) soundtrack.cleanup();
+      try {
+        stream.getTracks().forEach(t => t.stop());
+      } catch (e) {}
+    };
+
+    recorder.onstop = () => {
+      fullCleanup();
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent || '');
       const finalMime = mimeType || (isIOS ? 'video/mp4' : 'video/webm');
       const blob = new Blob(chunks, { type: finalMime });
@@ -288,38 +446,66 @@ export async function generateCinematicVideo({
 
     recorder.onerror = (err) => {
       console.error('Error durante la grabación:', err);
-      stopVideoSoundtrack();
-      if (soundtrack && soundtrack.cleanup) soundtrack.cleanup();
+      fullCleanup();
       reject(err);
     };
 
     try {
-      recorder.start();
+      // timeslice = 1000ms: Vuelca fragmentos cada 1 segundo.
+      // IMPRESCINDIBLE PARA SAFARI iOS: Evita que el codificador acumule buffers masivos
+      // en memoria RAM que colapsan a los 12-15 segundos (foto 9).
+      recorder.start(1000);
     } catch (startErr) {
       console.error('Error al ejecutar recorder.start():', startErr);
-      stopVideoSoundtrack();
-      if (soundtrack && soundtrack.cleanup) soundtrack.cleanup();
+      fullCleanup();
       reject(startErr);
       return;
     }
 
     let startTime = null;
+    let lastRenderTimestamp = 0;
+    const frameInterval = 1000 / fps; // ~33.33ms por frame
 
-    // Bucle de renderizado basado en tiempo real (evita desincronización en pantallas 120Hz/60Hz)
-    function renderLoop(timestamp) {
-      if (!startTime) startTime = timestamp;
-      const elapsed = (timestamp - startTime) / 1000;
-
-      if (elapsed >= totalDurationSeconds) {
-        if (recorder.state === 'recording') {
-          try {
-            recorder.stop();
-          } catch (e) {
-            console.warn('Error al detener recorder:', e);
-          }
+    function scheduleNext() {
+      if (isCompleted) return;
+      rafId = requestAnimationFrame(renderLoop);
+      // Guardián contra congelamiento de Safari si suspende rAF
+      clearTimeout(watchdogTimer);
+      watchdogTimer = setTimeout(() => {
+        if (!isCompleted) {
+          renderLoop(performance.now());
         }
-        return;
-      }
+      }, 95);
+    }
+
+    // Bucle de renderizado basado en tiempo real y frecuencia controlada (30 fps)
+    function renderLoop(timestamp) {
+      if (isCompleted) return;
+
+      try {
+        if (!startTime) startTime = timestamp;
+
+        // Control estricto a 30 fps:
+        // En pantallas a 60Hz o 120Hz (iPhone ProMotion), evitar redibujados innecesarios
+        // para ahorrar el 75% del consumo de GPU y evitar saturar la memoria en Safari.
+        if (timestamp - lastRenderTimestamp < frameInterval - 4) {
+          scheduleNext();
+          return;
+        }
+        lastRenderTimestamp = timestamp;
+
+        const elapsed = (timestamp - startTime) / 1000;
+
+        if (elapsed >= totalDurationSeconds) {
+          if (recorder.state === 'recording') {
+            try {
+              recorder.stop();
+            } catch (e) {
+              console.warn('Error al detener recorder:', e);
+            }
+          }
+          return;
+        }
 
       // 1. Fondo degradado base
       const bg = ctx.createLinearGradient(0, 0, 720, 1280);
@@ -504,13 +690,8 @@ export async function generateCinematicVideo({
         }
         ctx.restore(); // Fin clip foto
 
-        // Pie de foto de la Polaroid: LIMPIO Y ELEGANTE (SIN NINGÚN TEXTO ARTIFICIAL)
-        ctx.save();
-        ctx.fillStyle = '#E11D48';
-        ctx.font = '28px Georgia, serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('❤️', 360, pCardY + photoSize + 62);
-        ctx.restore();
+        // Pie de foto de la Polaroid: Motivo festivo unificado con la web (corazón rosa y guirnaldas)
+        drawPolaroidFestiveGarland(ctx, 360, pCardY + photoSize + 56);
       }
 
       // ===============================================================
@@ -751,12 +932,20 @@ export async function generateCinematicVideo({
         ctx.restore();
       }
 
-      const currentPct = Math.min(98, Math.round((elapsed / totalDurationSeconds) * 88) + 12);
-      onProgress(currentPct);
+        const currentPct = Math.min(98, Math.round((elapsed / totalDurationSeconds) * 88) + 12);
+        onProgress(currentPct);
 
-      requestAnimationFrame(renderLoop);
+        scheduleNext();
+      } catch (loopErr) {
+        console.error('Error dentro de renderLoop:', loopErr);
+        if (recorder && recorder.state === 'recording') {
+          try {
+            recorder.stop();
+          } catch (e) {}
+        }
+      }
     }
 
-    requestAnimationFrame(renderLoop);
+    scheduleNext();
   });
 }
