@@ -6,9 +6,7 @@
 
 import { 
   initAudioContext, 
-  getAudioDestination, 
-  startVideoSoundtrack, 
-  stopVideoSoundtrack 
+  createVideoAudioTrack 
 } from '../audio/retroAudioEngine';
 
 // Carga segura de imagen con CORS
@@ -25,11 +23,11 @@ function loadImage(src) {
   });
 }
 
-// Dibujar imagen manteniendo proporción y encuadrando caras
+// Dibujar imagen manteniendo proporción y encuadrando caras de forma segura (sin subpíxeles impares)
 function drawFittedPhoto(ctx, img, dx, dy, size, isPhoto27 = false) {
   if (!img) {
     ctx.fillStyle = '#E2E8F0';
-    ctx.fillRect(dx, dy, size, size);
+    ctx.fillRect(Math.floor(dx), Math.floor(dy), Math.floor(size), Math.floor(size));
     return;
   }
 
@@ -39,17 +37,31 @@ function drawFittedPhoto(ctx, img, dx, dy, size, isPhoto27 = false) {
 
   if (iw > ih) {
     sw = ih;
-    sx = (iw - ih) / 2;
+    sx = Math.floor((iw - ih) / 2);
   } else if (ih > iw) {
     sh = iw;
     if (isPhoto27) {
       sy = 0; // Anclaje superior para foto 27 (ambas cabezas completas)
     } else {
-      sy = Math.max(0, (ih - iw) * 0.22); // Enfoque tercio superior para fotos verticales
+      sy = Math.floor(Math.max(0, (ih - iw) * 0.22)); // Enfoque tercio superior para fotos verticales
     }
   }
 
-  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, size, size);
+  // Asegurar que las coordenadas no excedan las dimensiones de la imagen
+  sw = Math.min(sw, iw - sx);
+  sh = Math.min(sh, ih - sy);
+
+  ctx.drawImage(
+    img, 
+    Math.floor(sx), 
+    Math.floor(sy), 
+    Math.floor(sw), 
+    Math.floor(sh), 
+    Math.floor(dx), 
+    Math.floor(dy), 
+    Math.floor(size), 
+    Math.floor(size)
+  );
 }
 
 // Dibujar corazón estilizado
@@ -153,12 +165,14 @@ export async function generateCinematicVideo({
   const ctx = canvas.getContext('2d');
 
   const fps = 30;
-  const totalDurationSeconds = 56; // 56 segundos para que den tiempo las 29 fotos, carta y brindis
+  const totalDurationSeconds = 56; // 56 segundos para las 29 fotos completas, carta y brindis
 
   const stream = canvas.captureStream(fps);
-  const audioDest = getAudioDestination();
-  if (audioDest && audioDest.stream.getAudioTracks().length > 0) {
-    stream.addTrack(audioDest.stream.getAudioTracks()[0]);
+
+  // Iniciar pista de audio sincronizada con timestamps limpios (evita desfase en iOS Safari)
+  const audioInfo = createVideoAudioTrack(totalDurationSeconds);
+  if (audioInfo && audioInfo.track) {
+    stream.addTrack(audioInfo.track);
   }
 
   let mimeType = 'video/webm;codecs=vp9';
@@ -171,14 +185,13 @@ export async function generateCinematicVideo({
   }
 
   const chunks = [];
-  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 3500000 });
+  const recorder = new MediaRecorder(stream, { mimeType });
   recorder.ondataavailable = (e) => {
     if (e.data && e.data.size > 0) chunks.push(e.data);
   };
 
-  // Iniciar banda sonora sincronizada
-  startVideoSoundtrack(totalDurationSeconds);
-  recorder.start();
+  // Vaciar buffer cada 1000ms para evitar desbordamiento de memoria en VideoToolbox (iOS)
+  recorder.start(1000);
 
   // Partículas de confetti para la escena 1
   const confettiColors = ['#E11D48', '#FFB703', '#00A896', '#E4007C', '#FB8500', '#2563EB'];
@@ -203,14 +216,14 @@ export async function generateCinematicVideo({
 
   return new Promise((resolve, reject) => {
     recorder.onstop = () => {
-      stopVideoSoundtrack();
+      if (audioInfo && audioInfo.cleanup) audioInfo.cleanup();
       const blob = new Blob(chunks, { type: mimeType });
       const url = URL.createObjectURL(blob);
       resolve({ blob, url });
     };
 
     recorder.onerror = (err) => {
-      stopVideoSoundtrack();
+      if (audioInfo && audioInfo.cleanup) audioInfo.cleanup();
       reject(err);
     };
 
