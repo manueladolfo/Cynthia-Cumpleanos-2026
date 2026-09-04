@@ -703,7 +703,7 @@ export async function generateCinematicVideo({
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = '#8E3B27';
-        ctx.font = 'italic bold 44px Georgia, serif';
+        ctx.font = 'italic bold 32px Georgia, serif';
         ctx.fillText('✉️ Hay algo dentro para ti', 360, 160);
 
         // Carta que se despliega
@@ -732,78 +732,81 @@ export async function generateCinematicVideo({
 
         // Comillas decorativas
         ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
-        ctx.font = 'bold 90px Georgia, serif';
-        ctx.fillText('“', cardX + 45, cardY + 85);
+        ctx.font = 'bold 80px Georgia, serif';
+        ctx.fillText('“', cardX + 45, cardY + 80);
 
-        // Estrofas del Poema
-        let ty = cardY + 80;
+        // Estrofas del Poema (tamaño calibrado a 22px para márgenes holgados en móvil)
+        let ty = cardY + 76;
 
         // Estrofa 1
         ctx.fillStyle = '#1E293B';
-        ctx.font = '25px "Caveat", cursive, Georgia, serif';
+        ctx.font = '22px "Caveat", cursive, Georgia, serif';
         ctx.fillText('Hay personas que cuando llegan a tu vida, lo cambian todo.', 360, ty);
-        ty += 32;
+        ty += 31;
         ctx.fillText('Creo que ni el destino escribiendo las mejores historias,', 360, ty);
-        ty += 32;
+        ty += 31;
         ctx.fillText('habría creado a alguien tan especial para mí como tú.', 360, ty);
 
         // Divisor 1
-        ty += 32;
+        ty += 30;
         ctx.fillStyle = '#F43F5E';
-        ctx.font = '18px Georgia, serif';
+        ctx.font = '16px Georgia, serif';
         ctx.fillText('❦', 360, ty);
 
         // Estrofa 2
-        ty += 32;
-        ctx.fillStyle = '#1E293B';
-        ctx.font = '25px "Caveat", cursive, Georgia, serif';
-        ctx.fillText('Hoy me gustaría celebrarte tus mejores y peores momentos', 360, ty);
-        ty += 32;
-        ctx.fillText('y hacerte saber que siempre estoy y estaré para ti,', 360, ty);
-        ty += 32;
-        ctx.fillText('tanto para los unos como para los otros...', 360, ty);
         ty += 30;
+        ctx.fillStyle = '#1E293B';
+        ctx.font = '22px "Caveat", cursive, Georgia, serif';
+        ctx.fillText('Hoy me gustaría celebrarte tus mejores y peores momentos', 360, ty);
+        ty += 31;
+        ctx.fillText('y hacerte saber que siempre estoy y estaré para ti,', 360, ty);
+        ty += 31;
+        ctx.fillText('tanto para los unos como para los otros...', 360, ty);
+        ty += 29;
         ctx.fillStyle = '#9F1239';
-        ctx.font = 'italic 23px "Caveat", cursive, Georgia, serif';
+        ctx.font = 'italic 20px "Caveat", cursive, Georgia, serif';
         ctx.fillText('(aunque también me gustan más los buenos).', 360, ty);
 
         // Divisor 2
-        ty += 32;
+        ty += 30;
         ctx.fillStyle = '#F43F5E';
-        ctx.font = '18px Georgia, serif';
+        ctx.font = '16px Georgia, serif';
         ctx.fillText('❦', 360, ty);
 
         // Estrofa 3
-        ty += 32;
+        ty += 30;
         ctx.fillStyle = '#1E293B';
-        ctx.font = '25px "Caveat", cursive, Georgia, serif';
+        ctx.font = '22px "Caveat", cursive, Georgia, serif';
         ctx.fillText('Me gustaría celebrar contigo, tu forma de ser,', 360, ty);
-        ty += 32;
+        ty += 31;
         ctx.fillText('tu sonrisa y tu luz.', 360, ty);
-        ty += 32;
+        ty += 31;
         ctx.fillText('Que la vida te siga mostrando que no hay nada más especial', 360, ty);
-        ty += 32;
+        ty += 31;
         ctx.fillText('que cada instante vivido y nadie más especial que TÚ.', 360, ty);
 
         // Divisor 3
-        ty += 32;
+        ty += 30;
         ctx.fillStyle = '#F43F5E';
-        ctx.font = '18px Georgia, serif';
+        ctx.font = '16px Georgia, serif';
         ctx.fillText('❦', 360, ty);
 
         // Estrofa 4
-        ty += 32;
+        ty += 30;
         ctx.fillStyle = '#1E293B';
-        ctx.font = '25px "Caveat", cursive, Georgia, serif';
+        ctx.font = '22px "Caveat", cursive, Georgia, serif';
         ctx.fillText('Cada año que cumples,', 360, ty);
-        ty += 32;
+        ty += 31;
         ctx.fillText('es un nuevo capítulo que pienso compartir contigo.', 360, ty);
 
-        // Cierre
+        // Cierre / Firma anclada con seguridad al margen derecho interior de la carta
         ty += 38;
+        ctx.save();
+        ctx.textAlign = 'right';
         ctx.fillStyle = '#9F1239';
-        ctx.font = 'bold italic 25px Georgia, serif';
-        ctx.fillText('— Siempre contigo ❤️', 470, ty);
+        ctx.font = 'bold italic 23px Georgia, serif';
+        ctx.fillText('— Siempre contigo ❤️', cardX + cardW - 36, ty);
+        ctx.restore();
 
         // Sello de lacre rojo en la parte inferior
         ctx.beginPath();
@@ -831,7 +834,7 @@ export async function generateCinematicVideo({
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = '#8E3B27';
-        ctx.font = 'italic bold 44px Georgia, serif';
+        ctx.font = 'italic bold 38px Georgia, serif';
         ctx.fillText('🥂 ¡Un Brindis por Ti! 🥂', 360, 160);
 
         // Animación de copas
