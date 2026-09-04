@@ -1,6 +1,7 @@
 // ===================================================================
 // GENERADOR CINEMATOGRÁFICO DE VIDEO (Canvas 2D + MediaRecorder)
-// Recorrido interactivo fiel a la experiencia web (~48 segundos)
+// Recorrido fiel a la experiencia web (~56 segundos)
+// Sincronizado en tiempo real para iPhone / iOS Safari y PC
 // ===================================================================
 
 import { 
@@ -24,7 +25,7 @@ function loadImage(src) {
   });
 }
 
-// Dibujar imagen manteniendo proporción y enfocando rostros
+// Dibujar imagen manteniendo proporción y encuadrando caras
 function drawFittedPhoto(ctx, img, dx, dy, size, isPhoto27 = false) {
   if (!img) {
     ctx.fillStyle = '#E2E8F0';
@@ -42,7 +43,7 @@ function drawFittedPhoto(ctx, img, dx, dy, size, isPhoto27 = false) {
   } else if (ih > iw) {
     sh = iw;
     if (isPhoto27) {
-      sy = 0; // Anclaje superior para la foto 27 (ambas caras completas)
+      sy = 0; // Anclaje superior para foto 27 (ambas cabezas completas)
     } else {
       sy = Math.max(0, (ih - iw) * 0.22); // Enfoque tercio superior para fotos verticales
     }
@@ -105,7 +106,7 @@ function drawChampagneGlass(ctx, x, y, tiltAngle, liquidColor) {
   ctx.fill();
   ctx.stroke();
 
-  // Líquido dorado con degradado
+  // Líquido dorado
   ctx.beginPath();
   ctx.moveTo(-22, -35);
   ctx.lineTo(22, -35);
@@ -131,29 +132,28 @@ export async function generateCinematicVideo({
   onProgress,
   onStatus
 }) {
-  onStatus('Cargando recuerdos y preparando la música...');
+  onStatus('Cargando los 29 recuerdos y preparando la música...');
   onProgress(5);
 
   initAudioContext();
 
-  // 1. Cargar todas las fotos
+  // 1. Cargar TODAS las 29 fotos y la foto de pareja
   const [loadedCarousel, specialCoupleImg] = await Promise.all([
     Promise.all(carouselPhotos.map(src => loadImage(src))),
     loadImage('/images/special_couple.jpg')
   ]);
 
-  onProgress(15);
+  onProgress(12);
   onStatus('Iniciando grabación cinematográfica...');
 
-  // 2. Configurar Canvas 720x1280 (9:16 vertical)
+  // 2. Configurar Canvas 720x1280 (9:16 vertical móvil)
   const canvas = document.createElement('canvas');
   canvas.width = 720;
   canvas.height = 1280;
   const ctx = canvas.getContext('2d');
 
   const fps = 30;
-  const totalDurationSeconds = 48;
-  const totalFrames = fps * totalDurationSeconds; // 1440 frames
+  const totalDurationSeconds = 56; // 56 segundos para que den tiempo las 29 fotos, carta y brindis
 
   const stream = canvas.captureStream(fps);
   const audioDest = getAudioDestination();
@@ -176,7 +176,7 @@ export async function generateCinematicVideo({
     if (e.data && e.data.size > 0) chunks.push(e.data);
   };
 
-  // Iniciar audio limpio sin eco
+  // Iniciar banda sonora sincronizada
   startVideoSoundtrack(totalDurationSeconds);
   recorder.start();
 
@@ -191,17 +191,14 @@ export async function generateCinematicVideo({
     sizeH: Math.random() * 8 + 6,
     color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
     rotation: Math.random() * Math.PI * 2,
-    vRot: (Math.random() - 0.5) * 0.25,
-    wobble: Math.random() * Math.PI * 2
+    vRot: (Math.random() - 0.5) * 0.25
   }));
 
-  // Selección de momentos para el carrusel en el video (~8 fotos destacadas, asegurando foto 27)
-  const selectedIndices = [0, 4, 8, 14, 18, 21, 26, 28]; // Incluye 26 (foto 27)
-  const featuredPhotos = selectedIndices.map(idx => ({
-    img: loadedCarousel[idx] || loadedCarousel[0],
+  // Preparar la lista con TODAS las fotos (las 29 fotos)
+  const allPhotos = loadedCarousel.map((img, idx) => ({
+    img,
     index: idx,
-    isPhoto27: idx === 26,
-    caption: idx === 26 ? 'Un momento inolvidable' : `Recuerdo especial ${idx + 1}`
+    isPhoto27: idx === 26 // Foto 27: ajuste de caras
   }));
 
   return new Promise((resolve, reject) => {
@@ -217,15 +214,21 @@ export async function generateCinematicVideo({
       reject(err);
     };
 
-    let frame = 0;
+    let startTime = null;
 
-    function renderFrame() {
-      if (frame >= totalFrames) {
-        recorder.stop();
+    // Bucle de renderizado basado en tiempo real (evita desincronización en pantallas 120Hz/60Hz)
+    function renderLoop(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const elapsed = (timestamp - startTime) / 1000;
+
+      if (elapsed >= totalDurationSeconds) {
+        if (recorder.state === 'recording') {
+          recorder.stop();
+        }
         return;
       }
 
-      // Fondo degradado base
+      // 1. Fondo degradado base
       const bg = ctx.createLinearGradient(0, 0, 720, 1280);
       bg.addColorStop(0, '#FFF6F7');
       bg.addColorStop(0.5, '#FAF6F0');
@@ -234,16 +237,14 @@ export async function generateCinematicVideo({
       ctx.fillRect(0, 0, 720, 1280);
 
       // ===============================================================
-      // ESCENA 1: Intro, Corazón interactivo & Lluvia de Confetti (0s - 7.5s, f: 0..225)
+      // ESCENA 1: Intro y Desbloqueo de Corazón (0.0s - 4.5s)
       // ===============================================================
-      if (frame < 225) {
+      if (elapsed < 4.5) {
         onStatus('Generando escena: Desbloqueo y bienvenida...');
-        const introProgress = frame / 225;
 
-        // Cabecera festiva superior
         ctx.save();
         ctx.textAlign = 'center';
-        
+
         // Cinta distintiva
         ctx.fillStyle = '#FFE4E6';
         ctx.strokeStyle = '#F43F5E';
@@ -270,14 +271,14 @@ export async function generateCinematicVideo({
         ctx.fillText('Tengo una sorpresa preparada para ti', 360, 380);
         ctx.restore();
 
-        // Corazón pulsante (Frames 0 a 150)
-        const pulse = 1 + Math.sin(frame * 0.18) * 0.08;
+        // Corazón pulsante
+        const pulse = 1 + Math.sin(elapsed * 7) * 0.08;
         const heartSize = 130 * pulse;
-        const heartColor = frame >= 140 ? '#E11D48' : '#F43F5E';
+        const heartColor = elapsed >= 2.8 ? '#E11D48' : '#F43F5E';
         drawHeart(ctx, 360, 560, heartSize, heartColor);
 
-        // Barra de progreso y texto que sube hasta 100%
-        const fillProgress = Math.min(100, Math.round((frame / 140) * 100));
+        // Barra de progreso interactiva
+        const fillProgress = Math.min(100, Math.round((elapsed / 2.8) * 100));
         let statusText = 'Toca el corazón';
         if (fillProgress >= 25) statusText = 'Algo se está encendiendo...';
         if (fillProgress >= 65) statusText = 'Sigue, que esto se calienta';
@@ -306,20 +307,20 @@ export async function generateCinematicVideo({
         ctx.fillText(`${fillProgress}%`, 590, 800);
         ctx.restore();
 
-        // Confetti burst a partir del frame 140
-        if (frame >= 140) {
-          const confettiAge = (frame - 140) / 85;
+        // Ráfaga de confeti festivo a partir de 2.8s
+        if (elapsed >= 2.8) {
+          const confettiAge = (elapsed - 2.8) / 1.7;
           confettiParticles.forEach(p => {
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.55; // gravedad
+            p.x += p.vx * 0.7;
+            p.y += p.vy * 0.7;
+            p.vy += 0.45; // gravedad
             p.rotation += p.vRot;
 
             ctx.save();
             ctx.translate(p.x, p.y);
             ctx.rotate(p.rotation);
             ctx.fillStyle = p.color;
-            ctx.globalAlpha = Math.max(0, 1 - confettiAge * 0.7);
+            ctx.globalAlpha = Math.max(0, 1 - confettiAge * 0.8);
             ctx.fillRect(-p.sizeW / 2, -p.sizeH / 2, p.sizeW, p.sizeH);
             ctx.restore();
           });
@@ -327,69 +328,70 @@ export async function generateCinematicVideo({
       }
 
       // ===============================================================
-      // ESCENA 2: Carrusel Polaroid Deslizante (7.5s - 27.5s, f: 225..825)
+      // ESCENA 2: Carrusel Polaroid LIMPIO con las 29 Fotos (4.5s - 40.5s)
+      // Duración: 36 segundos / 29 fotos = ~1.24s por foto
       // ===============================================================
-      else if (frame >= 225 && frame < 825) {
-        onStatus('Generando escena: Recuerdos en Polaroid...');
-        const carouselframe = frame - 225;
-        const totalCarouselFrames = 600;
-        const framesPerPhoto = totalCarouselFrames / featuredPhotos.length; // 75 frames = 2.5s por foto
-        const currentPhotoIdx = Math.min(Math.floor(carouselframe / framesPerPhoto), featuredPhotos.length - 1);
-        const photoLocalProgress = (carouselframe % framesPerPhoto) / framesPerPhoto;
+      else if (elapsed >= 4.5 && elapsed < 40.5) {
+        onStatus('Generando escena: Recuerdos en fotos Polaroid...');
+        const carouselElapsed = elapsed - 4.5;
+        const totalPhotos = allPhotos.length;
+        const timePerPhoto = 36.0 / totalPhotos; // ~1.24s por foto
 
-        const currentPhoto = featuredPhotos[currentPhotoIdx];
-        const nextPhoto = featuredPhotos[Math.min(currentPhotoIdx + 1, featuredPhotos.length - 1)];
+        const currentPhotoIdx = Math.min(Math.floor(carouselElapsed / timePerPhoto), totalPhotos - 1);
+        const photoProgress = (carouselElapsed % timePerPhoto) / timePerPhoto;
 
-        // Título de la sección
+        const currentPhoto = allPhotos[currentPhotoIdx];
+        const nextPhoto = allPhotos[Math.min(currentPhotoIdx + 1, totalPhotos - 1)];
+
+        // Título limpio y elegante superior
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = '#8E3B27';
-        ctx.font = 'italic bold 44px Georgia, serif';
-        ctx.fillText('✨ Algunos Momentos ✨', 360, 170);
-        ctx.fillStyle = '#64748B';
-        ctx.font = '24px sans-serif';
-        ctx.fillText('Nuestros mejores recuerdos juntos', 360, 215);
+        ctx.font = 'italic bold 42px Georgia, serif';
+        ctx.fillText('✨ Nuestros Recuerdos ✨', 360, 170);
+        ctx.restore();
 
-        // Marco Polaroid Blanco
+        // Marco Polaroid Blanco Clásico
         const pCardW = 540;
-        const pCardH = 680;
+        const pCardH = 650;
         const pCardX = (720 - pCardW) / 2;
-        const pCardY = 270;
+        const pCardY = 250;
 
-        // Sombra suave
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+        // Sombra suave realista
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.10)';
         ctx.beginPath();
-        ctx.roundRect(pCardX + 10, pCardY + 14, pCardW, pCardH, 8);
+        ctx.roundRect(pCardX + 10, pCardY + 14, pCardW, pCardH, 12);
         ctx.fill();
 
-        // Cartulina polaroid
+        // Cartulina polaroid blanca limpia
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.roundRect(pCardX, pCardY, pCardW, pCardH, 8);
+        ctx.roundRect(pCardX, pCardY, pCardW, pCardH, 12);
         ctx.fill();
 
-        // Marco cuadrado de foto
+        // Ventana cuadrada de foto
         const photoSize = pCardW - 48; // 492x492
         const photoX = pCardX + 24;
         const photoY = pCardY + 24;
 
-        // Clip de la ventana de foto para deslizar
+        // Clip de la ventana para deslizar fotos
         ctx.save();
         ctx.beginPath();
         ctx.rect(photoX, photoY, photoSize, photoSize);
         ctx.clip();
 
-        // Transición de deslizamiento horizontal (como el carrusel web)
+        // Transición de deslizamiento horizontal (último 22% del tiempo de cada foto)
         let slideOffset = 0;
-        if (photoLocalProgress > 0.82) {
-          const slideOutRatio = (photoLocalProgress - 0.82) / 0.18;
-          slideOffset = -slideOutRatio * photoSize;
+        if (photoProgress > 0.78) {
+          const slideRatio = (photoProgress - 0.78) / 0.22;
+          const easeSlide = slideRatio * slideRatio * (3 - 2 * slideRatio);
+          slideOffset = -easeSlide * photoSize;
         }
 
-        // Dibujar foto actual
+        // Dibujar foto actual con sutil zoom
         ctx.save();
         ctx.translate(slideOffset, 0);
-        const subtleZoom = 1 + photoLocalProgress * 0.03;
+        const subtleZoom = 1 + photoProgress * 0.025;
         ctx.translate(photoX + photoSize / 2, photoY + photoSize / 2);
         ctx.scale(subtleZoom, subtleZoom);
         ctx.translate(-(photoX + photoSize / 2), -(photoY + photoSize / 2));
@@ -397,70 +399,40 @@ export async function generateCinematicVideo({
         ctx.restore();
 
         // Si está deslizando, dibujar la siguiente entrando desde la derecha
-        if (slideOffset < 0 && nextPhoto) {
+        if (slideOffset < 0 && nextPhoto && currentPhotoIdx < totalPhotos - 1) {
           ctx.save();
           ctx.translate(slideOffset + photoSize, 0);
           drawFittedPhoto(ctx, nextPhoto.img, photoX, photoY, photoSize, nextPhoto.isPhoto27);
           ctx.restore();
         }
-        ctx.restore(); // fin de clip
+        ctx.restore(); // Fin clip foto
 
-        // Motivo festivo inferior: banderitas mexicanas y rayos estrellados
-        const garlandY = pCardY + photoSize + 48;
+        // Pie de foto de la Polaroid: LIMPIO Y ELEGANTE (SIN NINGÚN TEXTO ARTIFICIAL)
         ctx.save();
-        ctx.strokeStyle = '#78716C';
-        ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        ctx.moveTo(pCardX + 130, garlandY);
-        ctx.quadraticCurveTo(360, garlandY + 16, pCardX + pCardW - 130, garlandY);
-        ctx.stroke();
-
-        // Banderitas de colores
-        const flagColors = ['#DC2626', '#1D4ED8', '#F59E0B', '#16A34A', '#B91C1C', '#0284C7'];
-        for (let i = 0; i < 6; i++) {
-          const fx = pCardX + 165 + i * 36;
-          const fy = garlandY + 5 + Math.sin((i / 5) * Math.PI) * 7;
-          ctx.fillStyle = flagColors[i];
-          ctx.beginPath();
-          ctx.moveTo(fx - 10, fy);
-          ctx.lineTo(fx + 10, fy);
-          ctx.lineTo(fx, fy + 15);
-          ctx.closePath();
-          ctx.fill();
-        }
-        ctx.restore();
-
-        // Pie de foto manuscrito
-        ctx.fillStyle = '#1E293B';
-        ctx.font = 'bold 38px "Patrick Hand", cursive, sans-serif';
-        ctx.fillText(currentPhoto.caption, 360, pCardY + photoSize + 115);
-
-        // Indicador de foto
-        ctx.fillStyle = '#64748B';
-        ctx.font = '22px sans-serif';
-        ctx.fillText(`Foto ${currentPhotoIdx + 1} de ${featuredPhotos.length}`, 360, 1010);
+        ctx.fillStyle = '#E11D48';
+        ctx.font = '28px Georgia, serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('❤️', 360, pCardY + photoSize + 62);
         ctx.restore();
       }
 
       // ===============================================================
-      // ESCENA 3: Sobre Artesanal y Carta Secreta (27.5s - 36.5s, f: 825..1095)
+      // ESCENA 3: Sobre Artesanal y Carta Secreta (40.5s - 47.5s)
       // ===============================================================
-      else if (frame >= 825 && frame < 1095) {
+      else if (elapsed >= 40.5 && elapsed < 47.5) {
         onStatus('Generando escena: Carta secreta...');
-        const letterFrame = frame - 825;
-        const letterProgress = letterFrame / 270;
 
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = '#8E3B27';
         ctx.font = 'italic bold 44px Georgia, serif';
-        ctx.fillText('✉️ Hay algo dentro para ti', 360, 170);
+        ctx.fillText('✉️ Hay algo dentro para ti', 360, 160);
 
         // Carta que se despliega
         const cardW = 620;
-        const cardH = 820;
+        const cardH = 840;
         const cardX = (720 - cardW) / 2;
-        const cardY = 210;
+        const cardY = 200;
 
         // Fondo pergamino de la carta
         const letterBg = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
@@ -480,12 +452,12 @@ export async function generateCinematicVideo({
         ctx.fill();
         ctx.stroke();
 
-        // Comillas grandes rosadas decorativas
+        // Comillas decorativas
         ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
         ctx.font = 'bold 90px Georgia, serif';
         ctx.fillText('“', cardX + 45, cardY + 85);
 
-        // Estrofas del Poema
+        // Estrofas del Poema (Texto definitivo exacto)
         let ty = cardY + 80;
 
         // Estrofa 1
@@ -565,68 +537,72 @@ export async function generateCinematicVideo({
         ctx.stroke();
 
         ctx.fillStyle = '#FFFDF2';
-        ctx.font = 'italic bold 18px Georgia, serif';
-        ctx.fillText('Descúbrelo', 360, cardY + cardH - 39);
+        ctx.font = 'bold italic 15px Georgia, serif';
+        ctx.fillText('Para ti', 360, cardY + cardH - 40);
+
         ctx.restore();
       }
 
       // ===============================================================
-      // ESCENA 4: Brindis con Copas & Foto Especial (36.5s - 43.5s, f: 1095..1305)
+      // ESCENA 4: Brindis con Champagne & Foto de Pareja (47.5s - 52.5s)
       // ===============================================================
-      else if (frame >= 1095 && frame < 1305) {
-        onStatus('Generando escena: Brindis de cumpleaños...');
-        const toastFrame = frame - 1095;
-        const toastProgress = toastFrame / 210;
+      else if (elapsed >= 47.5 && elapsed < 52.5) {
+        onStatus('Generando escena: Brindis y foto especial...');
+        const toastElapsed = elapsed - 47.5;
 
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = '#8E3B27';
         ctx.font = 'italic bold 44px Georgia, serif';
-        ctx.fillText('🥂 Por muchos cumpleaños más', 360, 170);
+        ctx.fillText('🥂 ¡Un Brindis por Ti! 🥂', 360, 160);
 
-        // Animación de las copas acercándose y brindando
-        const clinkPoint = Math.min(1, toastProgress * 3.5);
-        const leftGlassX = 260 + (1 - clinkPoint) * -50;
-        const rightGlassX = 460 + (1 - clinkPoint) * 50;
-        const tiltL = 0.25 * clinkPoint;
-        const tiltR = -0.25 * clinkPoint;
+        // Animación de copas
+        const clinkProgress = Math.min(1, toastElapsed / 1.5);
+        const glassSeparation = 130 * (1 - Math.min(1, clinkProgress * 1.5));
+        const tiltLeft = 0.20 * Math.min(1, clinkProgress * 2);
+        const tiltRight = -0.20 * Math.min(1, clinkProgress * 2);
 
-        drawChampagneGlass(ctx, leftGlassX, 330, tiltL, '#FBBF24');
-        drawChampagneGlass(ctx, rightGlassX, 330, tiltR, '#FBBF24');
+        drawChampagneGlass(ctx, 360 - 45 - glassSeparation, 300, tiltLeft, '#F59E0B');
+        drawChampagneGlass(ctx, 360 + 45 + glassSeparation, 300, tiltRight, '#F59E0B');
 
-        // Destello dorado en el contacto
-        if (toastProgress > 0.25) {
-          const sparkleScale = 1 + Math.sin(toastFrame * 0.3) * 0.3;
-          ctx.fillStyle = '#FDE047';
-          ctx.beginPath();
-          ctx.arc(360, 310, 8 * sparkleScale, 0, Math.PI * 2);
-          ctx.fill();
+        // Destello de choque
+        if (clinkProgress > 0.6) {
+          ctx.fillStyle = '#F59E0B';
+          ctx.font = 'bold 36px Georgia, serif';
+          ctx.fillText('✨ ¡SALUD! ✨', 360, 420);
         }
 
-        // Marco de la Foto Especial (special_couple.jpg)
-        const sSize = 460;
-        const sX = (720 - sSize) / 2;
-        const sY = 480;
+        // Título foto de pareja
+        ctx.fillStyle = '#1E293B';
+        ctx.font = 'bold 38px "Great Vibes", cursive, Georgia, serif';
+        ctx.fillText('Por muchos cumpleaños más juntos', 360, 475);
 
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+        // Foto de Pareja Enmarcada
+        const cPhotoSize = 440;
+        const cPhotoX = (720 - cPhotoSize) / 2;
+        const cPhotoY = 515;
+
+        // Marco elegante
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
         ctx.beginPath();
-        ctx.roundRect(sX + 8, sY + 12, sSize, sSize, 24);
+        ctx.roundRect(cPhotoX + 8, cPhotoY + 12, cPhotoSize, cPhotoSize, 24);
         ctx.fill();
 
         ctx.fillStyle = '#FFFFFF';
         ctx.beginPath();
-        ctx.roundRect(sX, sY, sSize, sSize, 24);
+        ctx.roundRect(cPhotoX, cPhotoY, cPhotoSize, cPhotoSize, 24);
         ctx.fill();
 
-        // Imagen especial recortada con esquinas suaves
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(sX + 16, sY + 16, sSize - 32, sSize - 32, 16);
-        ctx.clip();
-        drawFittedPhoto(ctx, specialCoupleImg, sX + 16, sY + 16, sSize - 32, false);
-        ctx.restore();
+        // Foto centrada
+        if (specialCoupleImg) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(cPhotoX + 16, cPhotoY + 16, cPhotoSize - 32, cPhotoSize - 32, 16);
+          ctx.clip();
+          drawFittedPhoto(ctx, specialCoupleImg, cPhotoX + 16, cPhotoY + 16, cPhotoSize - 32);
+          ctx.restore();
+        }
 
-        // Dedicatoria final bajo la foto
         ctx.fillStyle = '#8E3B27';
         ctx.font = 'bold 36px "Caveat", cursive, Georgia, serif';
         ctx.fillText('“Gracias por compartir tu vida conmigo”', 360, 1020);
@@ -637,14 +613,12 @@ export async function generateCinematicVideo({
       }
 
       // ===============================================================
-      // ESCENA 5: Cierre Emotivo (43.5s - 48s, f: 1305..1440)
+      // ESCENA 5: Cierre Emotivo (52.5s - 56.0s)
       // ===============================================================
       else {
         onStatus('Finalizando video...');
-        const outroFrame = frame - 1305;
-        const outroProgress = outroFrame / 135;
+        const outroElapsed = elapsed - 52.5;
 
-        // Fondo romántico suave
         const endBg = ctx.createLinearGradient(0, 0, 720, 1280);
         endBg.addColorStop(0, '#FFE4E6');
         endBg.addColorStop(0.6, '#FFF1F2');
@@ -652,11 +626,11 @@ export async function generateCinematicVideo({
         ctx.fillStyle = endBg;
         ctx.fillRect(0, 0, 720, 1280);
 
-        // Corazones suaves flotando
+        // Corazones flotantes suaves
         ctx.save();
         for (let i = 0; i < 12; i++) {
           const hx = 100 + (i * 65) % 560;
-          const hy = 1100 - ((outroFrame * 4 + i * 90) % 950);
+          const hy = 1100 - ((outroElapsed * 120 + i * 90) % 950);
           drawHeart(ctx, hx, hy, 26, 'rgba(244, 63, 94, 0.35)');
         }
 
@@ -680,12 +654,12 @@ export async function generateCinematicVideo({
         ctx.restore();
       }
 
-      frame++;
-      const currentPct = Math.min(98, Math.round((frame / totalFrames) * 85) + 15);
+      const currentPct = Math.min(98, Math.round((elapsed / totalDurationSeconds) * 88) + 12);
       onProgress(currentPct);
-      requestAnimationFrame(renderFrame);
+
+      requestAnimationFrame(renderLoop);
     }
 
-    renderFrame();
+    requestAnimationFrame(renderLoop);
   });
 }
