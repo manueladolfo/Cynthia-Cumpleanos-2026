@@ -120,8 +120,7 @@ export default function AnimatedEnvelope() {
                 <p className="font-historia text-xl sm:text-2xl font-semibold leading-relaxed text-slate-800">
                   Hay personas que cuando llegan a tu vida,<br />
                   lo cambian todo.<br />
-                  Creo que ni el destino,<br />
-                  escribiendo de las mejores historias,<br />
+                  Creo que ni el destino escribiendo las mejores historias,<br />
                   habría creado a alguien tan especial<br />
                   para mí como tú.
                 </p>
@@ -136,9 +135,7 @@ export default function AnimatedEnvelope() {
               <div className="mb-4 text-center sm:text-left">
                 <p className="font-historia text-xl sm:text-2xl font-semibold leading-relaxed text-slate-800">
                   Hoy me gustaría celebrarte<br />
-                  tus mejores y peores momentos,<br />
-                  y hacerte saber que siempre estoy y estaré para ti,<br />
-                  tanto para los unos como para los otros<br />
+                  tus mejores y peores momentos y hacerte saber que siempre estoy y estaré para ti, tanto para los unos como para los otros...<br />
                   <span className="italic text-rose-700/90 font-medium">(aunque también me gustan más los buenos).</span>
                 </p>
               </div>
@@ -151,11 +148,10 @@ export default function AnimatedEnvelope() {
               {/* Estrofa 3 */}
               <div className="mb-4 text-center sm:text-left">
                 <p className="font-historia text-xl sm:text-2xl font-semibold leading-relaxed text-slate-800">
-                  Celebrarte tu forma de ser,<br />
-                  tu sonrisa y tu forma de hacerme sentir bien.<br />
+                  Me gustaría celebrar contigo, tu forma de ser,<br />
+                  tu sonrisa y tu luz.<br />
                   Que la vida te siga mostrando<br />
-                  que no hay nada más especial que cada instante vivido<br />
-                  y nadie más especial que <strong className="font-bold text-rose-700 tracking-wider">TÚ</strong>.
+                  que no hay nada más especial que cada instante vivido y nadie más especial que <strong className="font-bold text-rose-700 tracking-wider">TÚ</strong>.
                 </p>
               </div>
 
