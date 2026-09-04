@@ -279,6 +279,72 @@ function drawPolaroidFestiveGarland(ctx, cx, cy) {
   ctx.restore();
 }
 
+// Dibuja el título centrado con sobrecito vectorial elegante (evita bugs de alineación con emojis en Safari iOS)
+function drawCenteredTitleWithEnvelope(ctx, text, cx, cy, font, textColor) {
+  ctx.save();
+  ctx.font = font;
+  const textW = ctx.measureText(text).width;
+  const envW = 28;
+  const envH = 18;
+  const gap = 10;
+  const totalW = envW + gap + textW;
+  const startX = cx - totalW / 2;
+
+  // Dibujar sobrecito vectorial nítido
+  const envX = startX;
+  const envY = cy - 17;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.strokeStyle = '#8E3B27';
+  ctx.lineWidth = 1.8;
+  safeRoundRect(ctx, envX, envY, envW, envH, 3);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(envX, envY);
+  ctx.lineTo(envX + envW / 2, envY + 9);
+  ctx.lineTo(envX + envW, envY);
+  ctx.stroke();
+
+  // Texto del título limpio sin emojis
+  ctx.fillStyle = textColor;
+  ctx.textAlign = 'left';
+  ctx.fillText(text, envX + envW + gap, cy);
+  ctx.restore();
+}
+
+// Dibuja la firma alineada a la derecha con un corazón vectorial seguro (sin bugs de emojis en Safari)
+function drawRightAlignedTextWithVectorHeart(ctx, text, rightX, cy, font, textColor, heartColor = '#E11D48') {
+  ctx.save();
+  ctx.font = font;
+  ctx.fillStyle = textColor;
+  const textW = ctx.measureText(text).width;
+  const heartSize = 16;
+  const gap = 8;
+  const totalW = textW + gap + heartSize;
+  const startX = rightX - totalW;
+  ctx.textAlign = 'left';
+  ctx.fillText(text, startX, cy);
+  drawHeart(ctx, startX + textW + gap + heartSize / 2, cy - heartSize * 0.4, heartSize, heartColor);
+  ctx.restore();
+}
+
+// Dibuja texto centrado con un corazón vectorial seguro al final
+function drawCenteredTextWithVectorHeart(ctx, text, cx, cy, font, textColor, heartColor = '#E11D48') {
+  ctx.save();
+  ctx.font = font;
+  ctx.fillStyle = textColor;
+  const textW = ctx.measureText(text).width;
+  const heartSize = 18;
+  const gap = 8;
+  const totalW = textW + gap + heartSize;
+  const startX = cx - totalW / 2;
+  ctx.textAlign = 'left';
+  ctx.fillText(text, startX, cy);
+  drawHeart(ctx, startX + textW + gap + heartSize / 2, cy - heartSize * 0.4, heartSize, heartColor);
+  ctx.restore();
+}
+
 export async function generateCinematicVideo({
   carouselPhotos,
   onProgress,
@@ -626,12 +692,12 @@ export async function generateCinematicVideo({
         const currentPhoto = allPhotos[currentPhotoIdx];
         const nextPhoto = allPhotos[Math.min(currentPhotoIdx + 1, totalPhotos - 1)];
 
-        // Título limpio y elegante superior
+        // Título limpio y elegante superior (sin emojis en fillText)
         ctx.save();
         ctx.textAlign = 'center';
         ctx.fillStyle = '#8E3B27';
         ctx.font = 'italic bold 42px Georgia, serif';
-        ctx.fillText('✨ Nuestros Recuerdos ✨', 360, 170);
+        ctx.fillText('Nuestros Recuerdos', 360, 170);
         ctx.restore();
 
         // Marco Polaroid Blanco Clásico
@@ -700,11 +766,8 @@ export async function generateCinematicVideo({
       else if (elapsed >= 40.5 && elapsed < 47.5) {
         onStatus('Generando escena: Carta secreta...');
 
-        ctx.save();
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#8E3B27';
-        ctx.font = 'italic bold 32px Georgia, serif';
-        ctx.fillText('✉️ Hay algo dentro para ti', 360, 160);
+        // Título de la carta con sobrecito vectorial centrado (cero emojis en fillText para evitar bug de Safari)
+        drawCenteredTitleWithEnvelope(ctx, 'Hay algo dentro para ti', 360, 160, 'italic bold 32px Georgia, serif', '#8E3B27');
 
         // Carta que se despliega
         const cardW = 620;
@@ -799,14 +862,9 @@ export async function generateCinematicVideo({
         ty += 31;
         ctx.fillText('es un nuevo capítulo que pienso compartir contigo.', 360, ty);
 
-        // Cierre / Firma anclada con seguridad al margen derecho interior de la carta
+        // Cierre / Firma anclada con seguridad al margen derecho interior de la carta (corazón vectorial, cero emojis)
         ty += 38;
-        ctx.save();
-        ctx.textAlign = 'right';
-        ctx.fillStyle = '#9F1239';
-        ctx.font = 'bold italic 23px Georgia, serif';
-        ctx.fillText('— Siempre contigo ❤️', cardX + cardW - 36, ty);
-        ctx.restore();
+        drawRightAlignedTextWithVectorHeart(ctx, '— Siempre contigo', cardX + cardW - 36, ty, 'bold italic 23px Georgia, serif', '#9F1239', '#F43F5E');
 
         // Sello de lacre rojo en la parte inferior
         ctx.beginPath();
@@ -835,7 +893,7 @@ export async function generateCinematicVideo({
         ctx.textAlign = 'center';
         ctx.fillStyle = '#8E3B27';
         ctx.font = 'italic bold 38px Georgia, serif';
-        ctx.fillText('🥂 ¡Un Brindis por Ti! 🥂', 360, 160);
+        ctx.fillText('¡Un Brindis por Ti!', 360, 160);
 
         // Animación de copas
         const clinkProgress = Math.min(1, toastElapsed / 1.5);
@@ -850,7 +908,7 @@ export async function generateCinematicVideo({
         if (clinkProgress > 0.6) {
           ctx.fillStyle = '#F59E0B';
           ctx.font = 'bold 36px Georgia, serif';
-          ctx.fillText('✨ ¡SALUD! ✨', 360, 420);
+          ctx.fillText('¡SALUD!', 360, 420);
         }
 
         // Título foto de pareja
@@ -887,9 +945,7 @@ export async function generateCinematicVideo({
         ctx.fillStyle = '#8E3B27';
         ctx.font = 'bold 36px "Caveat", cursive, Georgia, serif';
         ctx.fillText('“Gracias por compartir tu vida conmigo”', 360, 1020);
-        ctx.fillStyle = '#64748B';
-        ctx.font = '24px Georgia, serif';
-        ctx.fillText('Siempre juntos ❤️', 360, 1065);
+        drawCenteredTextWithVectorHeart(ctx, 'Siempre juntos', 360, 1065, '24px Georgia, serif', '#64748B', '#F43F5E');
         ctx.restore();
       }
 
@@ -923,11 +979,9 @@ export async function generateCinematicVideo({
 
         ctx.fillStyle = '#E11D48';
         ctx.font = 'bold 36px Georgia, serif';
-        ctx.fillText('✨ 13 Septiembre 2026 ✨', 360, 730);
+        ctx.fillText('13 Septiembre 2026', 360, 730);
 
-        ctx.fillStyle = '#881337';
-        ctx.font = 'italic bold 32px Georgia, serif';
-        ctx.fillText('Hecho con Amor ❤️', 360, 830);
+        drawCenteredTextWithVectorHeart(ctx, 'Hecho con Amor', 360, 830, 'italic bold 32px Georgia, serif', '#881337', '#F43F5E');
 
         ctx.fillStyle = '#475569';
         ctx.font = '26px sans-serif';
