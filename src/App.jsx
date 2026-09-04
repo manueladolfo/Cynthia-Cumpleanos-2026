@@ -149,8 +149,9 @@ export default function App() {
       setVideoModalOpen(true);
     } catch (err) {
       console.error('Error generando video:', err);
-      setExportStatus('Hubo un inconveniente creando el video.');
-      setTimeout(() => setIsExporting(false), 2500);
+      const detail = err?.message || err?.name || String(err);
+      setExportStatus(`Hubo un inconveniente: ${detail}`);
+      setTimeout(() => setIsExporting(false), 4000);
     }
   };
 
