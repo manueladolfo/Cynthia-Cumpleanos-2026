@@ -139,7 +139,7 @@ export async function generateCinematicVideo({
   // 1. Cargar todas las fotos
   const [loadedCarousel, specialCoupleImg] = await Promise.all([
     Promise.all(carouselPhotos.map(src => loadImage(src))),
-    loadImage('images/special_couple.jpg')
+    loadImage('/images/special_couple.jpg')
   ]);
 
   onProgress(15);
