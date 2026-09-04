@@ -766,6 +766,8 @@ export async function generateCinematicVideo({
       else if (elapsed >= 40.5 && elapsed < 47.5) {
         onStatus('Generando escena: Carta secreta...');
 
+        ctx.save();
+
         // Título de la carta con sobrecito vectorial centrado (cero emojis en fillText para evitar bug de Safari)
         drawCenteredTitleWithEnvelope(ctx, 'Hay algo dentro para ti', 360, 160, 'italic bold 32px Georgia, serif', '#8E3B27');
 
@@ -796,9 +798,11 @@ export async function generateCinematicVideo({
         // Comillas decorativas
         ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
         ctx.font = 'bold 80px Georgia, serif';
+        ctx.textAlign = 'center';
         ctx.fillText('“', cardX + 45, cardY + 80);
 
-        // Estrofas del Poema (tamaño calibrado a 22px para márgenes holgados en móvil)
+        // Estrofas del Poema (perfectamente centradas en el eje 360)
+        ctx.textAlign = 'center';
         let ty = cardY + 76;
 
         // Estrofa 1
@@ -877,6 +881,7 @@ export async function generateCinematicVideo({
 
         ctx.fillStyle = '#FFFDF2';
         ctx.font = 'bold italic 15px Georgia, serif';
+        ctx.textAlign = 'center';
         ctx.fillText('Para ti', 360, cardY + cardH - 40);
 
         ctx.restore();
