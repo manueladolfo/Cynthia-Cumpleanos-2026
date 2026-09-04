@@ -156,8 +156,8 @@ export default function App() {
 
   return (
     <div className="w-full min-h-screen flex justify-center items-start py-6 px-4 sm:px-6">
-      {/* Botón flotante de música 8-Bit */}
-      <MusicToggleButton visible={hasStarted} />
+      {/* Botón flotante de música 8-Bit (arriba a la izquierda, siempre accesible) */}
+      <MusicToggleButton />
 
       {/* ESTADO 1: Pantalla de Interacción Inicial */}
       {step === 1 && (
