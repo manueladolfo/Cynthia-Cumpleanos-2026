@@ -19,7 +19,7 @@ export default function AnimatedEnvelope() {
   return (
     <section className="w-full flex flex-col items-center select-none my-2" aria-label="Sobre interactivo con carta secreta">
       {/* Contenedor 3D del Sobre */}
-      <div className="w-full max-w-[340px] sm:max-w-[360px] relative envelope-container-3d">
+      <div className="w-full max-w-[350px] sm:max-w-[420px] relative envelope-container-3d">
         
         {/* El Sobre Físico */}
         <div 
@@ -115,25 +115,67 @@ export default function AnimatedEnvelope() {
             </span>
 
             <div className="relative z-10 pt-1">
-              {/* Primer mensaje */}
-              <p className="font-script text-3xl sm:text-4xl font-normal leading-relaxed text-slate-800 mb-2 indent-3 tracking-wide">
-                Cynthia, desde que llegaste a mi vida cada día tiene un color diferente. Tienes esa luz que transforma lo ordinario en algo completamente extraordinario.
-              </p>
-              <p className="font-subheading text-lg sm:text-xl font-normal text-right text-rose-800 m-0">
-                — Siempre contigo
-              </p>
+              {/* Estrofa 1 */}
+              <div className="mb-4 text-center sm:text-left">
+                <p className="font-historia text-xl sm:text-2xl font-semibold leading-relaxed text-slate-800">
+                  Hay personas que cuando llegan a tu vida,<br />
+                  lo cambian todo.<br />
+                  Creo que ni el destino,<br />
+                  escribiendo de las mejores historias,<br />
+                  habría creado a alguien tan especial<br />
+                  para mí como tú.
+                </p>
+              </div>
 
-              {/* Divisor sutil */}
-              <div className="flex items-center justify-center my-4 text-rose-400 text-xl opacity-60">
+              {/* Divisor poético */}
+              <div className="flex items-center justify-center my-3 text-rose-400 text-lg opacity-60 select-none">
                 <span>❦</span>
               </div>
 
-              {/* Segundo mensaje */}
-              <p className="font-script text-3xl sm:text-4xl font-normal leading-relaxed text-slate-800 mb-2 indent-3 tracking-wide">
-                Admiro tu fuerza, tu sonrisa sincera y esa forma tan tuya de cuidar a quienes quieres. Eres mi persona favorita en todo el universo.
-              </p>
-              <p className="font-subheading text-lg sm:text-xl font-normal text-right text-rose-800 m-0">
-                — Con todo mi corazón
+              {/* Estrofa 2 */}
+              <div className="mb-4 text-center sm:text-left">
+                <p className="font-historia text-xl sm:text-2xl font-semibold leading-relaxed text-slate-800">
+                  Hoy me gustaría celebrarte<br />
+                  tus mejores y peores momentos,<br />
+                  y hacerte saber que siempre estoy y estaré para ti,<br />
+                  tanto para los unos como para los otros<br />
+                  <span className="italic text-rose-700/90 font-medium">(aunque también me gustan más los buenos).</span>
+                </p>
+              </div>
+
+              {/* Divisor poético */}
+              <div className="flex items-center justify-center my-3 text-rose-400 text-lg opacity-60 select-none">
+                <span>❦</span>
+              </div>
+
+              {/* Estrofa 3 */}
+              <div className="mb-4 text-center sm:text-left">
+                <p className="font-historia text-xl sm:text-2xl font-semibold leading-relaxed text-slate-800">
+                  Celebrarte tu forma de ser,<br />
+                  tu sonrisa y tu forma de hacerme sentir bien.<br />
+                  Que la vida te siga mostrando<br />
+                  que no hay nada más especial que cada instante vivido<br />
+                  y nadie más especial que <strong className="font-bold text-rose-700 tracking-wider">TÚ</strong>.
+                </p>
+              </div>
+
+              {/* Divisor poético */}
+              <div className="flex items-center justify-center my-3 text-rose-400 text-lg opacity-60 select-none">
+                <span>❦</span>
+              </div>
+
+              {/* Estrofa 4 */}
+              <div className="mb-4 text-center sm:text-left">
+                <p className="font-historia text-xl sm:text-2xl font-semibold leading-relaxed text-slate-800">
+                  Cada año que cumples,<br />
+                  es un nuevo capítulo<br />
+                  que pienso compartir contigo.
+                </p>
+              </div>
+
+              {/* Firma poética de cierre */}
+              <p className="font-subheading text-lg sm:text-xl font-normal text-right text-rose-800 mt-4 mb-2">
+                — Siempre contigo ❤️
               </p>
 
               {/* Botón sutil para volver a doblar */}
