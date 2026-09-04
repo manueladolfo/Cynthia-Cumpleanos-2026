@@ -44,6 +44,7 @@ let audioDestination = null;
 let musicLoopTimeout = null;
 let isPlaying = false;
 let masterMelodyGain = null;
+let wasMusicPlayingBeforeVideo = false;
 const statusListeners = new Set();
 
 export function subscribeAudioStatus(listener) {
