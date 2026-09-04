@@ -43,6 +43,26 @@ let audioCtx = null;
 let audioDestination = null;
 let musicLoopTimeout = null;
 let isPlaying = false;
+let masterMelodyGain = null;
+const statusListeners = new Set();
+
+export function subscribeAudioStatus(listener) {
+  statusListeners.add(listener);
+  try {
+    listener(isPlaying);
+  } catch (e) {}
+  return () => statusListeners.delete(listener);
+}
+
+function notifyListeners() {
+  statusListeners.forEach(listener => {
+    try {
+      listener(isPlaying);
+    } catch (e) {
+      console.warn(e);
+    }
+  });
+}
 
 export function initAudioContext() {
   if (!audioCtx && typeof window !== 'undefined') {
@@ -167,23 +187,40 @@ export function playEnvelopeOpenChime() {
 }
 
 export function startBirthdayMelody(onStatusChange) {
-  if (isPlaying) return;
   initAudioContext();
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+
+  // Si ya está reproduciéndose con nodo activo, no duplicar
+  if (isPlaying && masterMelodyGain) return;
+
   isPlaying = true;
   if (onStatusChange) onStatusChange(true);
+  notifyListeners();
 
   function scheduleMelody() {
     if (!isPlaying || !audioCtx) return;
 
+    // Limpiar cualquier nodo anterior para evitar cruces
+    if (masterMelodyGain) {
+      try {
+        masterMelodyGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        masterMelodyGain.disconnect();
+      } catch (e) {}
+    }
+
+    masterMelodyGain = audioCtx.createGain();
+    masterMelodyGain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+    masterMelodyGain.connect(audioCtx.destination);
+
     let time = audioCtx.currentTime + 0.05;
-    const masterGain = audioCtx.createGain();
-    masterGain.gain.setValueAtTime(0.35, time);
-    masterGain.connect(audioCtx.destination);
 
     BIRTHDAY_SONG_8BIT.forEach(item => {
       const freq = NOTES[item.note];
-      play8BitNote(freq, time, item.dur, masterGain);
-      play8BitBass(freq, time, item.dur, masterGain);
+      play8BitNote(freq, time, item.dur, masterMelodyGain);
+      play8BitBass(freq, time, item.dur, masterMelodyGain);
       time += item.dur + item.pause;
     });
 
@@ -192,7 +229,7 @@ export function startBirthdayMelody(onStatusChange) {
       if (isPlaying) {
         scheduleMelody();
       }
-    }, totalDuration);
+    }, Math.max(1000, totalDuration));
   }
 
   scheduleMelody();
@@ -202,8 +239,28 @@ export function stopBirthdayMelody(onStatusChange) {
   isPlaying = false;
   if (musicLoopTimeout) {
     clearTimeout(musicLoopTimeout);
+    musicLoopTimeout = null;
+  }
+  if (masterMelodyGain && audioCtx) {
+    try {
+      // Silenciar y desconectar de inmediato para cortar notas programadas
+      masterMelodyGain.gain.cancelScheduledValues(audioCtx.currentTime);
+      masterMelodyGain.gain.setValueAtTime(0, audioCtx.currentTime);
+      masterMelodyGain.disconnect();
+    } catch (e) {}
+    masterMelodyGain = null;
   }
   if (onStatusChange) onStatusChange(false);
+  notifyListeners();
+}
+
+export function toggleBirthdayMelody(onStatusChange) {
+  if (isPlaying) {
+    stopBirthdayMelody(onStatusChange);
+  } else {
+    startBirthdayMelody(onStatusChange);
+  }
+  return isPlaying;
 }
 
 export function isAudioPlaying() {
