@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Feliz Cumpleaños Cynthia | Una sorpresa especial</title>
+  <meta name="description" content="Una sorpresa interactiva de cumpleaños muy especial para Cynthia. 13 de Septiembre de 2026.">
+  <meta name="theme-color" content="#FFF5F5">
+
+  <!-- Google Fonts de Vanguardia y Colección 'Letras Bonitas' -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Allura&family=Amatic+SC:wght@700&family=Caveat:wght@600;700&family=Cinzel+Decorative:wght@700;900&family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Pacifico&family=Patrick+Hand&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@500;600;700&family=Sacramento&family=Shrikhand&display=swap" rel="stylesheet">
+
+  <!-- Iconos Lucide (vía CDN SVG o directos) -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Canvas para partículas de fondo y efectos -->
+  <canvas id="sparkle-canvas"></canvas>
+
+  <!-- Botón flotante de música 8-Bit Retro -->
+  <button id="music-toggle-btn" class="music-floating-btn hidden" aria-label="Música de fondo 8-Bit" title="Activar/desactivar música 8-Bit">
+    <span class="music-icon-playing">👾</span>
+    <span>8-BIT</span>
+  </button>
+
+  <!-- ============================================== -->
+  <!-- ESTADO 1: PANTALLA DE INTERACCIÓN INICIAL      -->
+  <!-- ============================================== -->
+  <main id="state-1" class="state-container state-initial active">
+    <div class="initial-card-wrapper">
+      
+      <!-- Cabecera de Estado 1 estilo 'Felicitaciones' y 'Letras Bonitas' -->
+      <header class="initial-header">
+        <span class="sparkle-badge">PARA ALGUIEN MUY ESPECIAL</span>
+        
+        <!-- Emblema Artístico Cynthia con Motivos Mexicanos Elegantes -->
+        <div class="cynthia-artistic-emblem">
+          <svg class="emblem-flourish-svg" viewBox="0 0 420 210" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Dalia / Flor Mexicana Central Superior -->
+            <g class="mexican-flower-top">
+              <path d="M 210 34 C 203 18, 203 7, 210 5 C 217 7, 217 18, 210 34 Z" fill="#E4007C"/>
+              <path d="M 210 34 C 196 23, 187 17, 192 13 C 198 12, 204 23, 210 34 Z" fill="#FFB703"/>
+              <path d="M 210 34 C 224 23, 233 17, 228 13 C 222 12, 216 23, 210 34 Z" fill="#FFB703"/>
+              <path d="M 210 34 C 193 30, 185 35, 187 40 C 193 42, 202 38, 210 34 Z" fill="#00A896"/>
+              <path d="M 210 34 C 227 30, 235 35, 233 40 C 227 42, 218 38, 210 34 Z" fill="#00A896"/>
+              <path d="M 210 34 C 197 45, 192 51, 197 55 C 203 54, 206 45, 210 34 Z" fill="#FB8500"/>
+              <path d="M 210 34 C 223 45, 228 51, 223 55 C 217 54, 214 45, 210 34 Z" fill="#FB8500"/>
+              <!-- Núcleo de flor -->
+              <circle cx="210" cy="34" r="8" fill="#FFB703"/>
+              <circle cx="210" cy="34" r="4" fill="#E4007C"/>
+            </g>
+
+            <!-- Enredaderas botánicas superiores estilo Tenango -->
+            <path d="M 182 36 C 132 26, 80 44, 48 86" stroke="#2D6A4F" stroke-width="2.6" stroke-linecap="round"/>
+            <path d="M 238 36 C 288 26, 340 44, 372 86" stroke="#2D6A4F" stroke-width="2.6" stroke-linecap="round"/>
+
+            <!-- Hojas bordadas mexicanas superiores izquierdas -->
+            <path d="M 162 28 Q 150 17, 143 25 Q 153 32, 162 28 Z" fill="#2D6A4F"/>
+            <path d="M 136 32 Q 126 19, 118 27 Q 128 35, 136 32 Z" fill="#FFB703"/>
+            <path d="M 112 40 Q 99 29, 93 38 Q 103 46, 112 40 Z" fill="#E4007C"/>
+            <path d="M 88 52 Q 74 43, 69 53 Q 80 60, 88 52 Z" fill="#00A896"/>
+            <path d="M 68 68 Q 54 60, 51 70 Q 61 76, 68 68 Z" fill="#FB8500"/>
+
+            <!-- Hojas bordadas mexicanas superiores derechas -->
+            <path d="M 258 28 Q 270 17, 277 25 Q 267 32, 258 28 Z" fill="#2D6A4F"/>
+            <path d="M 284 32 Q 294 19, 302 27 Q 292 35, 284 32 Z" fill="#FFB703"/>
+            <path d="M 308 40 Q 321 29, 327 38 Q 317 46, 308 40 Z" fill="#E4007C"/>
+            <path d="M 332 52 Q 346 43, 351 53 Q 340 60, 332 52 Z" fill="#00A896"/>
+            <path d="M 352 68 Q 366 60, 369 70 Q 359 76, 352 68 Z" fill="#FB8500"/>
+
+            <!-- Banderitas / Festón papel picado sutil superior -->
+            <polygon points="120,44 128,42 124,52" fill="#E4007C"/>
+            <polygon points="146,38 154,36 150,46" fill="#00A896"/>
+            <polygon points="266,36 274,38 270,46" fill="#00A896"/>
+            <polygon points="292,42 300,44 296,52" fill="#E4007C"/>
+
+            <!-- Flores laterales estilo Tenango -->
+            <!-- Flor izquierda -->
+            <g class="mexican-flower-left">
+              <circle cx="44" cy="94" r="6" fill="#FFB703"/>
+              <circle cx="44" cy="94" r="3" fill="#FB8500"/>
+              <path d="M 44 88 C 42 81, 46 81, 44 88 Z" stroke="#E4007C" stroke-width="4" stroke-linecap="round"/>
+              <path d="M 44 100 C 42 107, 46 107, 44 100 Z" stroke="#E4007C" stroke-width="4" stroke-linecap="round"/>
+              <path d="M 38 94 C 31 92, 31 96, 38 94 Z" stroke="#00A896" stroke-width="4" stroke-linecap="round"/>
+              <path d="M 50 94 C 57 92, 57 96, 50 94 Z" stroke="#00A896" stroke-width="4" stroke-linecap="round"/>
+            </g>
+
+            <!-- Flor derecha -->
+            <g class="mexican-flower-right">
+              <circle cx="376" cy="94" r="6" fill="#FFB703"/>
+              <circle cx="376" cy="94" r="3" fill="#E4007C"/>
+              <path d="M 376 88 C 374 81, 378 81, 376 88 Z" stroke="#00A896" stroke-width="4" stroke-linecap="round"/>
+              <path d="M 376 100 C 374 107, 378 107, 376 100 Z" stroke="#00A896" stroke-width="4" stroke-linecap="round"/>
+              <path d="M 370 94 C 363 92, 363 96, 370 94 Z" stroke="#E4007C" stroke-width="4" stroke-linecap="round"/>
+              <path d="M 382 94 C 389 92, 389 96, 382 94 Z" stroke="#E4007C" stroke-width="4" stroke-linecap="round"/>
+            </g>
+
+            <!-- Trazo caligráfico de base estilo 'Felicitaciones' -->
+            <path class="lettering-underline" d="M 68 138 C 112 174, 180 162, 248 152 C 304 143, 348 149, 355 134 C 362 120, 342 114, 325 122 C 305 130, 255 146, 202 153 C 142 161, 90 154, 82 135" stroke="#0B4F6C" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- Enredadera botánica inferior con Dalia pequeña centrada -->
+            <path d="M 210 182 C 168 184, 126 176, 92 156" stroke="#2D6A4F" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M 210 182 C 252 184, 294 176, 328 156" stroke="#2D6A4F" stroke-width="2.2" stroke-linecap="round"/>
+
+            <!-- Hojas inferiores bordadas -->
+            <path d="M 184 180 Q 174 190, 168 182 Q 178 175, 184 180 Z" fill="#FB8500"/>
+            <path d="M 152 178 Q 142 188, 136 180 Q 146 173, 152 178 Z" fill="#00A896"/>
+            <path d="M 120 172 Q 110 181, 105 174 Q 115 167, 120 172 Z" fill="#FFB703"/>
+
+            <path d="M 236 180 Q 246 190, 252 182 Q 242 175, 236 180 Z" fill="#E4007C"/>
+            <path d="M 268 178 Q 278 188, 284 180 Q 274 173, 268 178 Z" fill="#00A896"/>
+            <path d="M 300 172 Q 310 181, 315 174 Q 305 167, 300 172 Z" fill="#FFB703"/>
+
+            <!-- Flor central inferior -->
+            <g class="mexican-flower-bottom">
+              <circle cx="210" cy="182" r="6" fill="#FFB703"/>
+              <circle cx="210" cy="182" r="2.5" fill="#FB8500"/>
+              <circle cx="203" cy="182" r="3.5" fill="#E4007C"/>
+              <circle cx="217" cy="182" r="3.5" fill="#E4007C"/>
+              <circle cx="210" cy="175" r="3.5" fill="#00A896"/>
+              <circle cx="210" cy="189" r="3.5" fill="#00A896"/>
+            </g>
+
+            <!-- Puntos de confeti mexicano en colores vivos -->
+            <circle cx="95" cy="22" r="3.5" fill="#FFB703"/>
+            <circle cx="325" cy="22" r="3.5" fill="#E4007C"/>
+            <circle cx="40" cy="62" r="3" fill="#00A896"/>
+            <circle cx="380" cy="62" r="3" fill="#FB8500"/>
+            <circle cx="30" cy="120" r="3.5" fill="#E4007C"/>
+            <circle cx="390" cy="120" r="3.5" fill="#00A896"/>
+            <circle cx="75" cy="182" r="3.5" fill="#FFB703"/>
+            <circle cx="345" cy="182" r="3.5" fill="#FB8500"/>
+            <circle cx="170" cy="196" r="3" fill="#E4007C"/>
+            <circle cx="250" cy="196" r="3" fill="#00A896"/>
+          </svg>
+
+          <!-- Nombre con tipografía caligráfica artesanal estilo 'Felicitaciones' -->
+          <h1 class="cynthia-name" id="hero-name">Cynthia</h1>
+        </div>
+
+        <div class="subtitle-badge-wrapper">
+          <p class="initial-subtitle">Tengo una sorpresa preparada para ti</p>
+        </div>
+      </header>
+
+      <!-- Botón Central Corazón Rojo -->
+      <div class="heart-interaction-zone">
+        <button id="heart-btn" class="big-heart-button" aria-label="Tocar el corazón para revelar la sorpresa">
+          <div class="heart-pulse-glow"></div>
+          <svg class="heart-svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <div class="heart-ripple-container" id="heart-ripples"></div>
+        </button>
+        <span class="tap-hint-text">Pulsa con un toque</span>
+      </div>
+
+      <!-- Barra de Progreso y Texto Dinámico -->
+      <footer class="initial-progress-section">
+        <!-- Texto dinámico según porcentaje exacto -->
+        <div class="progress-status-container">
+          <p id="dynamic-progress-text" class="dynamic-text">Toca el corazón</p>
+          <span id="progress-percent" class="percent-pill">0%</span>
+        </div>
+
+        <!-- Barra visual de progreso -->
+        <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div id="progress-bar-fill" class="progress-bar-fill">
+            <span class="progress-glow"></span>
+          </div>
+        </div>
+      </footer>
+
+    </div>
+  </main>
+
+  <!-- ============================================== -->
+  <!-- ESTADO 2: LANDING PAGE DE REVELACIÓN           -->
+  <!-- ============================================== -->
+  <div id="state-2" class="state-container state-reveal hidden">
+    
+    <!-- Hero Cabecera Estado 2 -->
+    <header class="reveal-header">
+      <div class="festive-badge">🎉 ¡Feliz Día! 🎂</div>
+      <h1 class="reveal-title">Hoy es el cumpleaños de mi persona favorita</h1>
+      <div class="date-capsule">
+        <span class="calendar-icon">📅</span>
+        <span class="date-text">13 Septiembre de 2026</span>
+      </div>
+      <div class="decorative-divider">
+        <span class="divider-line"></span>
+        <span class="divider-heart">💖</span>
+        <span class="divider-line"></span>
+      </div>
+      <p class="reveal-intro">Cada día a tu lado es un regalo, pero hoy el regalo eres tú para todo el mundo que te rodea.</p>
+    </header>
+
+    <!-- Feed Vertical de Memorias y Cartas Intercaladas -->
+    <section class="memories-feed" id="memories-feed-container">
+      <!-- El contenido dinámico de fotos y textos se inyecta desde script.js -->
+    </section>
+
+    <!-- Footer y Acciones Finales -->
+    <footer class="reveal-footer">
+      <div class="export-box">
+        <h3 class="export-title">Guarda este recuerdo para siempre</h3>
+        <p class="export-description">Genera un video especial con música de cumpleaños de fondo y tus momentos favoritos.</p>
+        
+        <button id="save-moment-btn" class="save-moment-button">
+          <span class="btn-icon">🎬</span>
+          <span class="btn-text">Guardar este momento</span>
+        </button>
+
+        <!-- Indicador de progreso de exportación -->
+        <div id="export-loader" class="export-loader hidden">
+          <div class="spinner"></div>
+          <p id="export-status-text">Creando tu video con música...</p>
+          <div class="export-progress-bar">
+            <div id="export-progress-fill" class="export-progress-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pie de página estático -->
+      <div class="made-with-love">
+        <p>Hecho con Amor <span class="pulsing-love-heart">❤️</span></p>
+        <span class="copyright-sub">13 Septiembre 2026 • Para Cynthia</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Modal de Previsualización de Foto Grande (Lightbox) -->
+  <div id="photo-modal" class="photo-modal hidden" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <button id="modal-close-btn" class="modal-close" aria-label="Cerrar foto">&times;</button>
+      <img id="modal-img" src="" alt="Recuerdo ampliado">
+      <p id="modal-caption" class="modal-caption-text"></p>
+    </div>
+  </div>
+
+  <!-- Modal de Reproducción y Guardado de Video -->
+  <div id="video-result-modal" class="video-result-modal hidden" aria-hidden="true">
+    <div class="video-modal-backdrop"></div>
+    <div class="video-modal-card">
+      <button id="video-modal-close-btn" class="video-modal-close" aria-label="Cerrar">&times;</button>
+      
+      <div class="video-modal-header">
+        <span class="video-badge">🎬 ¡Recuerdo Creado!</span>
+        <h3 class="video-modal-title">Tu video para Cynthia</h3>
+        <p class="video-modal-subtitle">Con música de cumpleaños y todas vuestras fotos.</p>
+      </div>
+
+      <div class="video-player-container">
+        <video id="preview-video-element" controls playsinline loop></video>
+      </div>
+
+      <div class="video-modal-actions">
+        <a id="direct-download-link" class="video-action-btn primary-btn" href="#" download="Cumpleanos_Cynthia_2026.mp4">
+          <span class="action-icon">⬇️</span>
+          <span>Descargar a mi dispositivo</span>
+        </a>
+        <button id="share-video-btn" class="video-action-btn share-btn">
+          <span class="action-icon">📲</span>
+          <span>Compartir en WhatsApp / Fotos</span>
+        </button>
+      </div>
+
+      <div class="video-save-tip">
+        <p>💡 <strong>¿Dónde se guarda?</strong> Al hacer clic en descargar, tu navegador lo guardará en tu carpeta de <strong>Descargas</strong> (o en <strong>Fotos</strong> si estás en el móvil). También puedes mantener presionado el video para guardarlo.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas Oculto para Generación de Video -->
+  <canvas id="video-render-canvas" width="720" height="1280" style="display: none;"></canvas>
+
+  <script src="script.js"></script>
+</body>
+</html>
